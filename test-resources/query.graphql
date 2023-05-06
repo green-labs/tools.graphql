@@ -1,0 +1,12 @@
+type Query {
+  """
+  직업군 목록
+  """
+  occupations(
+    """
+    test
+    """
+    after: String
+    first: Int = 1
+  ): [Occupation!]!
+}

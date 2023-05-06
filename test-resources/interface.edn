@@ -1,0 +1,13 @@
+{:interfaces {:Statistics {:description "통계"
+                           :fields      {:null                           {:description "Int"
+                                                                          :type        Int}
+                                         :not-null                       {:description "Int!"
+                                                                          :type        (non-null Int)}
+                                         :array-in-null-out-null         {:description "[Int]"
+                                                                          :type        (list Int)}
+                                         :array-in-null-out-not-null     {:description "[Int]!"
+                                                                          :type        (non-null (list Int))}
+                                         :array-in-not-null-out-null     {:description "[Int!]"
+                                                                          :type        (list (non-null Int))}
+                                         :array-in-not-null-out-not-null {:description "[Int!]!"
+                                                                          :type        (non-null (list (non-null Int)))}}}}}

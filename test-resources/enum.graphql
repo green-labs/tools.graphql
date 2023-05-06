@@ -1,0 +1,18 @@
+"""
+Order Direction
+"""
+enum OrderDirection {
+  """
+  low to high
+  """
+  ASC
+  """
+  high to low
+  """
+  DESC
+}
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}

@@ -1,0 +1,6 @@
+{:input-objects {:ReportInput {:fields {:targetId     {:type        (non-null ID)
+                                                       :description "신고 대상 ID"}
+                                        :reportTypeId {:type        (non-null ID)
+                                                       :description "신고 타입 ID"}
+                                        :url          {:type        (non-null Url)
+                                                       :description "신고 게시물의 주소 (댓글일 경우 자신이 쓰여진 글의 게시물)"}}}}}

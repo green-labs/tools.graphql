@@ -1,0 +1,12 @@
+{:objects {:User                {:fields {:id {:type (non-null ID)}}}
+           :Occupation          {:fields      {:id   {:type        (non-null ID)
+                                                      :description "ID"}
+                                               :name {:type        (non-null String)
+                                                      :description "직업군의 이름"}
+                                               :code {:type        (non-null String)
+                                                      :description "직업군 코드"}}
+                                 :description "직업군"}
+           :SetOccupationResult {:fields      {:user {:type (non-null :User)}}
+                                 :description "setOccupation의 정상 수행 결과"}
+           :NotFoundError       {:implements [:Error]
+                                 :fields     {:message {:type String}}}}}

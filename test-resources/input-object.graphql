@@ -1,0 +1,14 @@
+input ReportInput {
+  """
+  신고 대상 ID
+  """
+  targetId: ID!
+  """
+  신고 타입 ID
+  """
+  reportTypeId: ID!
+  """
+  신고 게시물의 주소 (댓글일 경우 자신이 쓰여진 글의 게시물)
+  """
+  url: Url!
+}

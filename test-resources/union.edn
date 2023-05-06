@@ -1,0 +1,2 @@
+{:unions {:SetOccupationPayload {:members     [:NotFoundError :SetOccupationResult]
+                                 :description "setOccupation 의 수행 결과 모음"}}}

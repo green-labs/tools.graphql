@@ -1,0 +1,11 @@
+type Mutation {
+  """
+  로그인된 사용자의 직업군을 설정
+  """
+  setOccupation(
+    """
+    직업군의 ID
+    """
+    id: ID!
+  ): SetOccupationPayload!
+}

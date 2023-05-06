@@ -1,0 +1,6 @@
+{:queries {:occupations {:args        {:after {:type        String
+                                               :description "test"}
+                                       :first {:type          Int
+                                               :default-value 1}}
+                         :type        (non-null (list (non-null :Occupation)))
+                         :description "직업군 목록"}}}

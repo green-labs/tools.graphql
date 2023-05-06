@@ -1,0 +1,8 @@
+{:enums {:OrderDirection {:description "Order Direction"
+                          :values      [{:enum-value  :ASC
+                                         :description "low to high"}
+                                        {:enum-value  :DESC
+                                         :description "high to low"}]}
+         :Role           {:values [{:enum-value :USER}
+                                   {:enum-value :MANAGER}
+                                   {:enum-value :ADMIN}]}}}

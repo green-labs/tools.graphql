@@ -1,0 +1,29 @@
+type User {
+  id: ID!
+}
+"""
+직업군
+"""
+type Occupation {
+  """
+  ID
+  """
+  id: ID!
+  """
+  직업군의 이름
+  """
+  name: String!
+  """
+  직업군 코드
+  """
+  code: String!
+}
+"""
+setOccupation의 정상 수행 결과
+"""
+type SetOccupationResult {
+  user: User!
+}
+type NotFoundError implements Error {
+  message: String
+}

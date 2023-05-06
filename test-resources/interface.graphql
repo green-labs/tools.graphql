@@ -1,0 +1,29 @@
+"""
+통계
+"""
+interface Statistics {
+  """
+  Int
+  """
+  null: Int
+  """
+  Int!
+  """
+  not-null: Int!
+  """
+  [Int]
+  """
+  array-in-null-out-null: [Int]
+  """
+  [Int]!
+  """
+  array-in-null-out-not-null: [Int]!
+  """
+  [Int!]
+  """
+  array-in-not-null-out-null: [Int!]
+  """
+  [Int!]!
+  """
+  array-in-not-null-out-not-null: [Int!]!
+}

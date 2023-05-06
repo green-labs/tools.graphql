@@ -1,0 +1,6 @@
+"""
+setOccupation 의 수행 결과 모음
+"""
+union SetOccupationPayload = 
+  NotFoundError
+| SetOccupationResult
