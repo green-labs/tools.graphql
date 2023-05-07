@@ -1,6 +1,7 @@
 (ns user
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
+            [clojure.pprint :as pprint]
             [farmmorning.core-api.graphql.schema :refer [schemas]]
             [farmmorning.graphql-helper.interface :refer [support-graphql-expression]]
             [medley.core :refer [deep-merge]]
@@ -28,6 +29,11 @@
       (when-let [more (next data)]
         (.write writer "\n")
         (recur more)))))
+
+(defn print-merged-schema
+  [_args]
+  (binding []
+    (pprint/pprint merged-schema)))
 
 (defn generate-sdl
   [{:keys [file-name]}]

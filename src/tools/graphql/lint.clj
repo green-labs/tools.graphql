@@ -28,14 +28,13 @@
 (defn breaking-ret?
   "반환값은 nullable -> non-nullable 만 non-breaking"
   [{:keys [- +]}]
-  (not=
-    (cond
-      (list? -)
-      (cons 'non-null -)
+  (not= (cond
+          (list? -)
+          (cons 'non-null -)
 
-      :else
-      (cons 'non-null (list -)))
-    +))
+          :else
+          (cons 'non-null (list -)))
+        +))
 
 (defn changed-types [d]
   (let [mismatch? #(and (record? %)
@@ -51,8 +50,9 @@
   (let [d (-> (ddiff/diff before after)
               (ddiff/minimize))
 
-        bc (assoc {} :removed-fields (removed-fields d)
-                     :changed-types (changed-types d))]
+        bc (assoc {}
+                  :removed-fields (removed-fields d)
+                  :changed-types (changed-types d))]
 
     (cond-> bc)
 
