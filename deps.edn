@@ -1,3 +1,7 @@
 {:paths   ["src"]
- :deps    {}
- :aliases {:test {:extra-paths ["test" "test-resources"]}}}
+ :deps    {lambdaisland/deep-diff2 {:mvn/version "2.8.190"}}
+ :aliases {:dev  {:extra-paths ["dev"]
+                  :extra-deps  {poly/core-api        {:local/root "../../bases/core-api"}
+                                poly/cache-directive {:local/root "../../components/cache-directive"}
+                                poly/graphql-helper  {:local/root "../../components/graphql-helper"}}}
+           :test {:extra-paths ["test" "test-resources"]}}}

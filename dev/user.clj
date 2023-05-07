@@ -1,4 +1,4 @@
-(ns tools.graphql.file
+(ns user
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as s]
