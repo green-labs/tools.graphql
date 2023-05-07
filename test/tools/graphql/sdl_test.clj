@@ -1,5 +1,6 @@
 (ns tools.graphql.sdl-test
   (:require [clojure.data :refer [diff]]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.test :refer :all]
@@ -7,7 +8,7 @@
 
 (defn read-edn [path]
   (-> (slurp (io/resource path))
-      (clojure.edn/read-string)))
+      (edn/read-string)))
 
 (defn diff-edn-sdl [filename]
   (diff (str/join "\n" (edn->sdl (read-edn (str filename ".edn"))))
@@ -25,8 +26,7 @@
     (is (test-conversion "mutation"))
     (is (test-conversion "union"))
     (is (test-conversion "input-object"))
-    (is (test-conversion "scalar")))
-  )
+    (is (test-conversion "scalar"))))
 
 (comment
   (run-tests)
@@ -50,6 +50,4 @@
                      sample-scalar))
   (println (str/join "\n" (edn->sdl sample)))
   (println (sdl/->query sample :occupations))
-  (println (sdl/->mutation sample :setOccupation))
-
-  )
+  (println (sdl/->mutation sample :setOccupation)))
