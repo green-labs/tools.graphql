@@ -1,0 +1,5 @@
+"""
+ISO8601 형식의 UTC 기준 datetime (YYYY-MM-DDTHH:mm:ssZ, 소수점 이하는 있어도 무방)
+                 (참고: https://github.com/green-labs/web-adr/blob/main/DateTime.md)
+"""
+scalar DateTime

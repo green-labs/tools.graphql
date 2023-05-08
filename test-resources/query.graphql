@@ -9,4 +9,8 @@ type Query {
     after: String
     first: Int = 1
   ): [Occupation!]!
+  """
+  카드사 전체 조회 쿼리
+  """
+  cardCompanies: [CardCompany!]!
 }
