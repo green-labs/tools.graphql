@@ -1,6 +1,10 @@
-{:queries {:occupations {:args        {:after {:type        String
-                                               :description "test"}
-                                       :first {:type          Int
-                                               :default-value 1}}
-                         :type        (non-null (list (non-null :Occupation)))
-                         :description "직업군 목록"}}}
+{:queries {:occupations   {:args        {:after {:type        String
+                                                 :description "test"}
+                                         :first {:type          Int
+                                                 :default-value 1}}
+                           :type        (non-null (list (non-null :Occupation)))
+                           :description "직업군 목록"}
+           :cardCompanies {:description "카드사 전체 조회 쿼리"
+                           :args        {}
+                           :type        (non-null (list (non-null :CardCompany)))
+                           :resolve     'farmmorning.core-api.payment.resolver/resolve-card-companies}}}

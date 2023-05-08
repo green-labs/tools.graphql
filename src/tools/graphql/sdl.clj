@@ -48,7 +48,7 @@
 (defn ->arg
   ([m] (->arg m ""))
   ([m indent]
-   (when m
+   (when (seq m)
      (str "(\n"
           (->> m
                vec
