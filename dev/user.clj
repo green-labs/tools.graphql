@@ -4,6 +4,7 @@
             [clojure.pprint :as pprint]
             [farmmorning.core-api.graphql.schema :refer [schemas]]
             [farmmorning.graphql-helper.interface :refer [support-graphql-expression]]
+            [gosura.helpers.relay :as ghr]
             [medley.core :refer [deep-merge]]
             [tools.graphql.sdl :refer [edn->sdl]])
   (:import (java.io PushbackReader Writer)))
@@ -20,7 +21,8 @@
        (map io/resource)
        (map read-edn)
        (apply deep-merge)
-       (support-graphql-expression)))
+       (support-graphql-expression)
+       ghr/extend-relay-types))
 
 (defn write-sdl [^Writer writer schema]
   (loop [data (edn->sdl schema)]
