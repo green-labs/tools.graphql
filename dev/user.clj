@@ -38,14 +38,16 @@
     (pprint/pprint merged-schema)))
 
 (defn generate-sdl
-  [{:keys [file-name]}]
-  (with-open [wrtr (clojure.java.io/writer (name file-name))]
-    (write-sdl wrtr merged-schema)))
+  [{:keys [filename]}]
+  (if filename
+    (with-open [wrtr (clojure.java.io/writer (name filename))]
+      (write-sdl wrtr merged-schema))
+    (write-sdl *out* merged-schema)))
 
 (comment
 
   (write-sdl *out* merged-schema)
 
-  (generate-sdl {:file-name "hello.gql"})
+  (generate-sdl {:filename "hello.gql"})
 
   :rcf)
