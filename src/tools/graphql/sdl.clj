@@ -33,6 +33,18 @@
         (name s1)))
     (name expr)))
 
+(defn ->value
+  [expr]
+  (cond
+    (keyword? expr)
+    (name expr)
+
+    (sequential? expr)
+    (str "[" (s/join ", " (map ->value expr)) "]")
+
+    :else
+    (str expr)))
+
 (defn ->field
   ([m] (->field m ""))
   ([[field-name {:keys [description type default-value]}] indent]
@@ -41,9 +53,7 @@
         ": "
         (->type type)
         (when default-value
-          (str " = " (if (keyword? default-value)
-                       (name default-value)
-                       (str default-value)))))))
+          (str " = " (->value default-value))))))
 
 (defn ->arg
   ([m] (->arg m ""))

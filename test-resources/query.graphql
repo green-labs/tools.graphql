@@ -13,4 +13,10 @@ type Query {
   카드사 전체 조회 쿼리
   """
   cardCompanies: [CardCompany!]!
+  """
+  커뮤니티 게시글 목록 상단에 표시될 고정글의 데이터를 반환한다.
+  """
+  communityPinnedPosts(
+    target: [CommunityPostPinnedTarget!]! = [SUBJECT]
+  ): CommunityPostConnection!
 }
