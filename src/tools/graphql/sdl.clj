@@ -45,15 +45,33 @@
     :else
     (str expr)))
 
+(declare ->arg)
+
+(defn- ->directive [directive args]
+  (let [args' (->> args
+                   (map (fn [[k v]]
+                          (let [k' (name k)
+                                v' (if (string? v) (str \" v \") v)]
+                            (str k' ": " v'))))
+                   (s/join ", "))]
+    (str "@" directive (when args (str "(" args' ")")))))
+
+(defn- ->deprecated [deprecated]
+  (->directive "deprecated" (when deprecated {:reason deprecated})))
+
 (defn ->field
   ([m] (->field m ""))
-  ([[field-name {:keys [description type default-value]}] indent]
+  ([[field-name {:keys [description type args default-value deprecated]}] indent]
    (str (->doc description indent)
         indent (name field-name)
+        (when args (->> (->arg args)
+                        (s/split-lines)
+                        (s/join (str "\n" indent))))
         ": "
         (->type type)
         (when default-value
-          (str " = " (->value default-value))))))
+          (str " = " (->value default-value)))
+        (when deprecated (str " " (->deprecated deprecated))))))
 
 (defn ->arg
   ([m] (->arg m ""))
@@ -74,13 +92,14 @@
          (str (->doc description)
               "enum " (name k) " {\n"
               (->> values
-                   (map (fn [{:keys [description enum-value]}]
+                   (map (fn [{:keys [description deprecated enum-value]}]
                           (str
                            (->doc description "  ")
                            "  "
-                           (name enum-value))))
+                           (name enum-value)
+                           (when deprecated (str " " (->deprecated deprecated))))))
                    (s/join "\n"))
-              "\n}"))
+              "\n}\n"))
        (vec m)))
 
 (defn- object&input&interface->sdl
@@ -99,7 +118,7 @@
                    vec
                    (map #(->field % "  "))
                    (s/join "\n"))
-              "\n}"))
+              "\n}\n"))
        (vec m)))
 
 (defmethod ->sdl :interfaces
@@ -120,13 +139,14 @@
        type
        " {\n"
        (->> m
-            (map (fn [[k {:keys [description args type]}]]
+            (map (fn [[k {:keys [deprecated description args type]}]]
                    (str (->doc description "  ")
                         "  "
                         (name k)
                         (->arg args "  ")
                         ": "
-                        (->type type))))
+                        (->type type)
+                        (when deprecated (str " " (->deprecated deprecated))))))
             (s/join "\n"))
        "\n}\n"))
 

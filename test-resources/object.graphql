@@ -1,6 +1,14 @@
 type User {
+  """
+  ID
+  """
   id: ID!
+  address(
+    first: String
+    after: String
+  ): [String] @deprecated(reason: "deprecated")
 }
+
 """
 직업군
 """
@@ -18,12 +26,14 @@ type Occupation {
   """
   code: String!
 }
+
 """
 setOccupation의 정상 수행 결과
 """
 type SetOccupationResult {
   user: User!
 }
+
 type NotFoundError implements Error {
   message: String
 }

@@ -7,5 +7,5 @@ type Mutation {
     직업군의 ID
     """
     id: ID!
-  ): SetOccupationPayload!
+  ): SetOccupationPayload! @deprecated(reason: "deprecated")
 }
