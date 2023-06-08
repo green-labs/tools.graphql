@@ -4,5 +4,6 @@
                                         {:enum-value  :DESC
                                          :description "high to low"}]}
          :Role           {:values [{:enum-value :USER}
-                                   {:enum-value :MANAGER}
+                                   {:enum-value :MANAGER
+                                    :deprecated "deprecated"}
                                    {:enum-value :ADMIN}]}}}

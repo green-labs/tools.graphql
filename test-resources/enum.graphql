@@ -11,8 +11,9 @@ enum OrderDirection {
   """
   DESC
 }
+
 enum Role {
   USER
-  MANAGER
+  MANAGER @deprecated(reason: "deprecated")
   ADMIN
 }

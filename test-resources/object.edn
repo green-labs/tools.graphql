@@ -1,4 +1,9 @@
-{:objects {:User                {:fields {:id {:type (non-null ID)}}}
+{:objects {:User                {:fields {:id      {:type         (non-null ID)
+                                                    :description "ID"}
+                                          :address {:type       (list String)
+                                                    :deprecated "deprecated"
+                                                    :args       {:first {:type String}
+                                                                 :after {:type String}}}}}
            :Occupation          {:fields      {:id   {:type        (non-null ID)
                                                       :description "ID"}
                                                :name {:type        (non-null String)
