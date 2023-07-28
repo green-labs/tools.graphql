@@ -4,4 +4,7 @@
                   :extra-deps  {poly/core-api        {:local/root "../../bases/core-api"}
                                 poly/cache-directive {:local/root "../../components/cache-directive"}
                                 poly/graphql-helper  {:local/root "../../components/graphql-helper"}}}
-           :test {:extra-paths ["test" "test-resources"]}}}
+           :test {:extra-paths ["test" "test-resources"]
+                  :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                                      :git/sha "dfb30dd"}}
+                  :exec-fn     cognitect.test-runner.api/test}}}

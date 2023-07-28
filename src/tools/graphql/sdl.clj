@@ -39,6 +39,9 @@
     (keyword? expr)
     (name expr)
 
+    (string? expr)
+    (str "\"" expr "\"")
+
     (sequential? expr)
     (str "[" (s/join ", " (map ->value expr)) "]")
 

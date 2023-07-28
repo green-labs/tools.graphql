@@ -1,6 +1,16 @@
-{:input-objects {:ReportInput {:fields {:targetId     {:type        (non-null ID)
-                                                       :description "신고 대상 ID"}
-                                        :reportTypeId {:type        (non-null ID)
-                                                       :description "신고 타입 ID"}
-                                        :url          {:type        (non-null Url)
-                                                       :description "신고 게시물의 주소 (댓글일 경우 자신이 쓰여진 글의 게시물)"}}}}}
+{:input-objects {:ReportInput                {:fields {:targetId     {:type        (non-null ID)
+                                                                      :description "신고 대상 ID"}
+                                                       :reportTypeId {:type        (non-null ID)
+                                                                      :description "신고 타입 ID"}
+                                                       :url          {:type        (non-null Url)
+                                                                      :description "신고 게시물의 주소 (댓글일 경우 자신이 쓰여진 글의 게시물)"}}}
+
+                 :CreatePesticideReviewInput {:fields {:pesticideId              {:type (non-null ID)}
+                                                       :reviewBody               {:type (non-null String)}
+                                                       :ratingValue              {:type        (non-null Int)
+                                                                                  :description "매길 별점입니다. 1~5점까지 매길 수 있습니다."}
+                                                       :imageUrls                {:type (list (non-null :Url))}
+                                                       :reviewBodySymptomsHelped {:type String}
+                                                       :origin                   {:deprecated    "리뷰를 작성한 곳, 불필요한 필드입니다. 추후 사용처가 제거되면 삭제할 예정입니다."
+                                                                                  :type          String
+                                                                                  :default-value "PESTICIDE_REVIEW"}}}}}
