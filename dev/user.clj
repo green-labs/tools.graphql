@@ -2,8 +2,7 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
-            [farmmorning.core-api.graphql.schema :refer [schemas]]
-            [farmmorning.graphql-helper.interface :refer [support-graphql-expression]]
+            [farmmorning.core-api.graphql.schema :refer [schemas support-graphql-expression]]
             [gosura.helpers.relay :as ghr]
             [medley.core :refer [deep-merge]]
             [tools.graphql.sdl :refer [edn->sdl]])
