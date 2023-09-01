@@ -1,0 +1,13 @@
+query occupations(
+  $after: String
+  $first: Int = 1
+) {
+occupations(
+after: $after
+first: $first
+){
+id
+name
+code
+}
+}

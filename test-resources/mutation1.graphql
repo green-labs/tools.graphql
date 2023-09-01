@@ -1,0 +1,22 @@
+mutation setOccupation(
+  $id: ID!
+  $addressfirst: String
+  $addressafter: String
+) {
+setOccupation(
+id: $id
+){
+... on NotFoundError {
+message
+}
+... on SetOccupationResult {
+user {
+id
+address(
+first: $addressfirst
+after: $addressafter
+)
+}
+}
+}
+}

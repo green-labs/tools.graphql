@@ -19,4 +19,9 @@ type Query {
   communityPinnedPosts(
     target: [CommunityPostPinnedTarget!]! = [SUBJECT]
   ): CommunityPostConnection!
+  """
+  등급 조회
+  """
+  marketPriceV3LevelNames: [String!]!
+  me: User!
 }
