@@ -4,6 +4,9 @@
 (def ^:private convert-keys
   #{:enums :interfaces :objects :queries :mutations :unions :input-objects :scalars})
 
+(def ^:private primitive-types
+  #{'String 'Int 'Float 'Boolean 'ID})
+
 (defmulti ->sdl
   "lacinia edn schema 를 graphql sdl 로 변환합니다."
   (fn [[k _]]
@@ -205,13 +208,15 @@
          (contains? memo-set field))))
 
 (defn ->args
-  [args]
-  (str "(\n"
-       (->> (keys args)
-            (map #(let [k' (name %)]
-                    (str k' ": $" k')))
-            (s/join "\n"))
-       "\n)"))
+  ([args]
+   (->args args nil))
+  ([args prefix]
+   (str "(\n"
+        (->> (keys args)
+             (map #(let [k' (name %)]
+                     (str k' ": $" prefix k')))
+             (s/join "\n"))
+        "\n)")))
 
 (defn ->field-names
   ([schema object-def]
@@ -220,30 +225,58 @@
    (->> (get object-def :fields {})
         vec
         (map (fn [[k {:keys [type args]} :as parent]]
-               (if-let [object-def (get-object schema (inner-type type))]
-                 (when-not (duplicate-type? schema parent memo-set)
-                   (str (name k)
-                        (when args (->args args))
-                        " {\n"
-                        (->field-names schema object-def (conj memo-set parent))
-                        "\n}"))
-                 (name k))))
+               (when-not (duplicate-type? schema parent memo-set)
+                 (str (name k)
+                      (when args (->args args (name k)))
+                      (when-let [object-def (get-object schema (inner-type type))]
+                        (str " {\n"
+                             (->field-names schema object-def (conj memo-set parent))
+                             "\n}"))))))
         (s/join "\n"))))
+
+(defn args->query-args
+  ([args]
+   (args->query-args args nil))
+  ([args prefix]
+   (map (fn [[k v]]
+          [(str "$" prefix (name k))
+           (select-keys v [:type :default-value])])
+        args)))
+
+(defn extract-field-args
+  ([schema type]
+   (extract-field-args schema type #{}))
+  ([schema type memo-set]
+   (let [return-only-type (inner-type type)]
+     (if-let [union (get-in schema [:unions return-only-type :members])]
+       (mapcat (fn [type]
+                 (extract-field-args schema type memo-set))
+               union)
+       (->> (get (get-object schema return-only-type) :fields {})
+            vec
+            (mapcat (fn [[field-name {:keys [type args]} :as parent]]
+                      (when-not (duplicate-type? schema parent memo-set)
+                        (concat
+                         (when (get-object schema (inner-type type))
+                           (extract-field-args schema type (conj memo-set parent)))
+                         (when args
+                           (args->query-args args (name field-name))))))))))))
 
 (defn- query&mutation->query
   [schema query-type query-name {:keys [args type]}]
-  (str query-type " " (name query-name)
-       (->arg (->> args
-                   (map (fn [[k v]]
-                          [(str "$" (name k))
-                           (select-keys v [:type])]))
-                   (into {})))
-       " {\n"
-       (name query-name)
-       (when args
-         (->args args))
-       "{\n"
-       (let [return-only-type (inner-type type)]
+  (let [return-only-type (inner-type type)
+        primitive-type?  (primitive-types return-only-type)
+        query-args       (args->query-args args)
+        field-args       (extract-field-args schema return-only-type)]
+    (str query-type " " (name query-name)
+         (->arg (->> (concat query-args field-args)
+                     (into {})))
+         " {\n"
+         (name query-name)
+         (when (seq args)
+           (->args args))
+         (when-not primitive-type?
+           "{\n")
          (if-let [union (get-in schema [:unions return-only-type :members])]
            (->> union
                 (map (fn [type]
@@ -251,9 +284,10 @@
                             (->field-names schema (get-object schema type))
                             "\n}")))
                 (s/join "\n"))
-           (->field-names schema (get-object schema return-only-type))))
-       "\n}"
-       "\n}"))
+           (->field-names schema (get-object schema return-only-type)))
+         (when-not primitive-type?
+           "\n}")
+         "\n}")))
 
 (defn ->query
   "lacinia edn 에 있는 query 중 query-name 을 찾아 GraphQL에 요청 할 수 있는 query를 만듭니다.

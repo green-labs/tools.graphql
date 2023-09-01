@@ -1,0 +1,9 @@
+query communityPinnedPosts(
+  $target: [CommunityPostPinnedTarget!]! = [SUBJECT]
+) {
+communityPinnedPosts(
+target: $target
+){
+
+}
+}

@@ -1,0 +1,12 @@
+query me(
+  $addressfirst: String
+  $addressafter: String
+) {
+me{
+id
+address(
+first: $addressfirst
+after: $addressafter
+)
+}
+}
