@@ -39,12 +39,13 @@
 (deftest query
   (let [test-conversion (fn [q filename]
                           (= (slurp (io/resource (str filename ".graphql")))
-                             (->query sample q)))]
+                             (->query sample q {:max-depth 4})))]
     (is (test-conversion :occupations "query1"))
     (is (test-conversion :cardCompanies "query2") "인자가 빈 상태로 생성되는지 확인")
     (is (test-conversion :marketPriceV3LevelNames "query3") "반환값이 기본 타입인 경우")
     (is (test-conversion :communityPinnedPosts "query4") "기본값이 있는 경우")
-    (is (test-conversion :me "query5") "field resolver 의 인자가 있는 경우")))
+    (is (test-conversion :me "query5") "field resolver 의 인자가 있는 경우")
+    (is (test-conversion :node "query6") "; 인터페이스가 반환되는 경우")))
 
 (deftest mutation
   (let [test-conversion (fn [q filename]
@@ -56,5 +57,5 @@
   (run-tests)
 
   (println (str/join "\n" (edn->sdl sample)))
-  (println (sdl/->query sample :me))
+  (println (sdl/->query sample :node))
   (println (sdl/->mutation sample :setOccupation)))

@@ -5,7 +5,7 @@ query occupations(
 occupations(
 after: $after
 first: $first
-){
+) {
 id
 name
 code

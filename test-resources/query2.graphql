@@ -1,5 +1,3 @@
 query cardCompanies {
-cardCompanies{
-
-}
+cardCompanies
 }

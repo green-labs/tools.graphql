@@ -4,9 +4,6 @@
 (def ^:private convert-keys
   #{:enums :interfaces :objects :queries :mutations :unions :input-objects :scalars})
 
-(def ^:private primitive-types
-  #{'String 'Int 'Float 'Boolean 'ID})
-
 (defmulti ->sdl
   "lacinia edn schema 를 graphql sdl 로 변환합니다."
   (fn [[k _]]
@@ -200,39 +197,16 @@
   (or (get-in schema [:objects (keyword type-name)])
       (get-in schema [:objects (symbol type-name)])))
 
-(defn- duplicate-type?
-  [schema field memo-set]
-  (let [objects    (set (keys (:objects schema)))
-        field-type (inner-type (:type (second field)))]
-    (and (contains? objects field-type)
-         (contains? memo-set field))))
-
 (defn ->args
   ([args]
-   (->args args nil))
+   (->args args ""))
   ([args prefix]
    (str "(\n"
         (->> (keys args)
              (map #(let [k' (name %)]
-                     (str k' ": $" prefix k')))
+                     (str k' ": $" (name prefix) k')))
              (s/join "\n"))
         "\n)")))
-
-(defn ->field-names
-  ([schema object-def]
-   (->field-names schema object-def #{}))
-  ([schema object-def memo-set]
-   (->> (get object-def :fields {})
-        vec
-        (map (fn [[k {:keys [type args]} :as parent]]
-               (when-not (duplicate-type? schema parent memo-set)
-                 (str (name k)
-                      (when args (->args args (name k)))
-                      (when-let [object-def (get-object schema (inner-type type))]
-                        (str " {\n"
-                             (->field-names schema object-def (conj memo-set parent))
-                             "\n}"))))))
-        (s/join "\n"))))
 
 (defn args->query-args
   ([args]
@@ -243,31 +217,137 @@
            (select-keys v [:type :default-value])])
         args)))
 
+(defn field-def->type
+  [[_ {:keys [type]}]]
+  (inner-type type))
+
+(defn field-def->name
+  [[field-name _]]
+  (when field-name (name field-name)))
+
+(defn field-def->args-str
+  [[field-name {:keys [args]}]]
+  (when args (->args args field-name)))
+
+(defn type->field-def
+  [schema type]
+  [nil (-> (get-object schema type)
+           (assoc :type type))])
+
+(defn implementition-types
+  "인터페이스 구현체를 모두 찾는다."
+  [schema interface]
+  (let [objects (-> schema :objects)]
+    (->> (keys objects)
+         (keep (fn [object-name]
+                 (let [object (get objects object-name)]
+                   (when (some #(= % interface) (:implements object))
+                     object-name)))))))
+
+(defmulti select-field
+  "쿼리에서 선택하는 필드의 종류에 따른 필드 쿼리 문자열 생성
+   Arguments
+    - schema: lacinia 스키마 edn
+    - field-def: 필드 정의 (objects에서 조회된 값. )
+      - [field-name {:keys [type args fields]}]]
+    - opts: option map
+      - max-depth: 쿼리문을 생성할 최대 깊이"
+  (fn [schema field-def opts]
+    (let [type (field-def->type field-def)]
+      (cond
+        (> (:depth opts) (:max-depth opts)) :max-depth
+        (get-in schema [:unions type]) :union
+        (get-in schema [:interfaces type]) :interface
+        (or (get-in schema [:objects (keyword type)])
+            (get-in schema [:objects (name type)])) :object))))
+
+(defmethod select-field :union
+  [schema field-def opts]
+  (let [members  (get-in schema [:unions (field-def->type field-def) :members])
+        children (->> members
+                      (map #(let [children  (select-field schema (type->field-def schema %) opts)]
+                              (when (not-empty children)
+                                (str "... on " (name %)
+                                     children))))
+                      (filter #(not-empty %)))]
+    (when (not-empty children)
+      (str (field-def->name field-def)
+           (when (not-empty children)
+             (str " {\n" (s/join "\n" children) "\n}"))))))
+
+(defmethod select-field :interface
+  [schema field-def opts]
+  (let [implementition-types (implementition-types schema (field-def->type field-def))
+        children             (->> implementition-types
+                                  (map #(let [children (select-field schema (type->field-def schema %) opts)]
+                                          (when (not-empty children)
+                                            (str "... on " (name %)
+                                                 children))))
+                                  (filter #(not-empty %)))]
+    (when (not-empty children)
+      (str (field-def->name field-def)
+           (when (not-empty children)
+             (str " {\n" (s/join "\n" children) "\n}"))))))
+
+(defmethod select-field :object
+  [schema field-def opts]
+  (let [object   (get-object schema (field-def->type field-def))
+        children (->> (get object :fields {})
+                      (map (fn [field]
+                             (str (select-field schema field (update opts :depth inc)))))
+                      (filter #(not-empty %)))]
+    (when (not-empty children)
+      (let [children' (if (:typename? opts) (conj children "__typename") children)]
+        (str (when-let [field-name (field-def->name field-def)]
+               (str field-name
+                    (field-def->args-str field-def)))
+             (str " {\n" (s/join "\n" children') "\n}"))))))
+
+(defmethod select-field :default
+  [_schema field-def _opts]
+  (when-let [field-name (field-def->name field-def)]
+    (str field-name
+         (field-def->args-str field-def))))
+
+(defmethod select-field :max-depth
+  [_schema _field-def _opts])
+
 (defn extract-field-args
+  "재귀적으로 `max-depth`까지 필드의 인자를 모두 찾아서 반환"
   ([schema type]
-   (extract-field-args schema type #{}))
-  ([schema type memo-set]
+   (extract-field-args schema type {:max-depth 3}))
+  ([schema type {:keys [depth max-depth]
+                 :or   {depth 0}
+                 :as   opts}]
    (let [return-only-type (inner-type type)]
-     (if-let [union (get-in schema [:unions return-only-type :members])]
-       (mapcat (fn [type]
-                 (extract-field-args schema type memo-set))
-               union)
+     (cond
+       (< max-depth depth) []
+
+       (get-in schema [:unions type])
+       (->> (get-in schema [:unions return-only-type :members])
+            (mapcat (fn [type] (extract-field-args schema type opts))))
+
+       (get-in schema [:interfaces type])
+       (->> (implementition-types schema return-only-type)
+            (mapcat (fn [type] (extract-field-args schema type opts))))
+
+       :else
        (->> (get (get-object schema return-only-type) :fields {})
-            vec
-            (mapcat (fn [[field-name {:keys [type args]} :as parent]]
-                      (when-not (duplicate-type? schema parent memo-set)
-                        (concat
-                         (when (get-object schema (inner-type type))
-                           (extract-field-args schema type (conj memo-set parent)))
-                         (when args
-                           (args->query-args args (name field-name))))))))))))
+            (mapcat (fn [[field-name {:keys [type args]}]]
+                      (concat
+                       (when (get-object schema (inner-type type))
+                         (extract-field-args schema type (assoc opts :depth (inc depth))))
+                       (when args
+                         (args->query-args args (name field-name)))))))))))
+
 
 (defn- query&mutation->query
-  [schema query-type query-name {:keys [args type]}]
+  [schema query-type query-name {:keys [args type]} {:keys [max-depth]
+                                                     :or   {max-depth 3}
+                                                     :as   opts}]
   (let [return-only-type (inner-type type)
-        primitive-type?  (primitive-types return-only-type)
         query-args       (args->query-args args)
-        field-args       (extract-field-args schema return-only-type)]
+        field-args       (extract-field-args schema return-only-type {:max-depth max-depth})]
     (str query-type " " (name query-name)
          (->arg (->> (concat query-args field-args)
                      (into {})))
@@ -275,38 +355,38 @@
          (name query-name)
          (when (seq args)
            (->args args))
-         (when-not primitive-type?
-           "{\n")
-         (if-let [union (get-in schema [:unions return-only-type :members])]
-           (->> union
-                (map (fn [type]
-                       (str "... on " (name type) " {\n"
-                            (->field-names schema (get-object schema type))
-                            "\n}")))
-                (s/join "\n"))
-           (->field-names schema (get-object schema return-only-type)))
-         (when-not primitive-type?
-           "\n}")
-         "\n}")))
+         (select-field schema (type->field-def schema return-only-type) (merge opts
+                                                                               {:depth     0
+                                                                                :max-depth max-depth}))
+         "\n}\n")))
 
 (defn ->query
   "lacinia edn 에 있는 query 중 query-name 을 찾아 GraphQL에 요청 할 수 있는 query를 만듭니다.
   input
   - schema: lacinia edn
   - query-name: edn 에 지정된 query 이름
+  - opts:
+    - max-depth: 쿼리문을 생성할 최대 깊이
+    - typename?: __typename 필드를 추가할지 여부
   output
   - GraphQL query string"
-  [schema query-name]
-  (when-let [query-def (get-in schema [:queries query-name])]
-    (query&mutation->query schema "query" query-name query-def)))
+  ([schema query-name]
+   (->query schema query-name {}))
+  ([schema query-name opts]
+   (when-let [query-def (get-in schema [:queries query-name])]
+     (query&mutation->query schema "query" query-name query-def opts))))
 
 (defn ->mutation
   "lacinia edn 에 있는 mutation 중 mutation-name 을 찾아 GraphQL에 요청 할 수 있는 mutation을 만듭니다.
   input
   - schema: lacinia edn
   - mutation-name: edn 에 지정된 mutation 이름
+   - opts:
+    - max-depth: 쿼리문을 생성할 최대 깊이
   output
   - GraphQL mutation string"
-  [schema mutation-name]
-  (when-let [mutation-def (get-in schema [:mutations mutation-name])]
-    (query&mutation->query schema "mutation" mutation-name mutation-def)))
+  ([schema mutation-name]
+   (->mutation schema mutation-name {}))
+  ([schema mutation-name opts]
+   (when-let [mutation-def (get-in schema [:mutations mutation-name])]
+     (query&mutation->query schema "mutation" mutation-name mutation-def opts))))
