@@ -10,4 +10,7 @@
                                          :array-in-not-null-out-null     {:description "[Int!]"
                                                                           :type        (list (non-null Int))}
                                          :array-in-not-null-out-not-null {:description "[Int!]!"
-                                                                          :type        (non-null (list (non-null Int)))}}}}}
+                                                                          :type        (non-null (list (non-null Int)))}}}
+              :Node       {:description "Node"
+                           :fields      {:id {:description "ID"
+                                              :type        (non-null ID)}}}}}

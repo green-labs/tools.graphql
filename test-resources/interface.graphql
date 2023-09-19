@@ -27,3 +27,13 @@ interface Statistics {
   """
   array-in-not-null-out-not-null: [Int!]!
 }
+
+"""
+Node
+"""
+interface Node {
+  """
+  ID
+  """
+  id: ID!
+}

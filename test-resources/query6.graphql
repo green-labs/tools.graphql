@@ -1,12 +1,15 @@
-query me(
-  $addressfirst: String
-  $addressafter: String
+query node(
+  $id: ID!
 ) {
-me {
+node(
+id: $id
+) {
+... on User {
 id
 address(
 first: $addressfirst
 after: $addressafter
 )
+}
 }
 }

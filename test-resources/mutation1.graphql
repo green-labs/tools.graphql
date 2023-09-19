@@ -5,7 +5,7 @@ mutation setOccupation(
 ) {
 setOccupation(
 id: $id
-){
+) {
 ... on NotFoundError {
 message
 }

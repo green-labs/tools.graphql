@@ -3,7 +3,5 @@ query communityPinnedPosts(
 ) {
 communityPinnedPosts(
 target: $target
-){
-
-}
+)
 }

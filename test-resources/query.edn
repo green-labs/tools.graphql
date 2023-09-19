@@ -23,4 +23,10 @@
                                      :description "등급 조회"}
 
            ; field resolver 가 있는 경우
-           :me                      {:type (non-null :User)}}}
+           :me                      {:type (non-null :User)}
+
+           ; 인터페이스가 반환되는 경우
+           :node                    {:args        {:id {:type        (non-null ID)
+                                                        :description "The ID of an object"}}
+                                     :type        :Node
+                                     :description "Node 조회"}}}

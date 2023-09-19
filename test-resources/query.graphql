@@ -24,4 +24,13 @@ type Query {
   """
   marketPriceV3LevelNames: [String!]!
   me: User!
+  """
+  Node 조회
+  """
+  node(
+    """
+    The ID of an object
+    """
+    id: ID!
+  ): Node
 }
