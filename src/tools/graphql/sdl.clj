@@ -295,13 +295,13 @@
         children (->> (get object :fields {})
                       (map (fn [field]
                              (str (select-field schema field (update opts :depth inc)))))
-                      (filter #(not-empty %)))
-        children (if (:typename opts) (conj children "__typename") children)]
+                      (filter #(not-empty %)))]
     (when (not-empty children)
-      (str (when-let [field-name (field-def->name field-def)]
-             (str field-name
-                  (field-def->args-str field-def)))
-           (str " {\n" (s/join "\n" children) "\n}")))))
+      (let [children' (if (:typename? opts) (conj children "__typename") children)]
+        (str (when-let [field-name (field-def->name field-def)]
+               (str field-name
+                    (field-def->args-str field-def)))
+             (str " {\n" (s/join "\n" children') "\n}"))))))
 
 (defmethod select-field :default
   [_schema field-def _opts]
@@ -367,6 +367,7 @@
   - query-name: edn 에 지정된 query 이름
   - opts:
     - max-depth: 쿼리문을 생성할 최대 깊이
+    - typename?: __typename 필드를 추가할지 여부
   output
   - GraphQL query string"
   ([schema query-name]
