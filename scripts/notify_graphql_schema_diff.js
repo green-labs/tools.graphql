@@ -152,8 +152,9 @@ const onComplete = async (changes) => {
         .filter((dc => inputOrArgsChanges.includes(dc.type)))
 
     if (changes.breakingChanges.length) {
-        messages.push('### Breaking Changes')
+        messages.push('### Breaking Changes ⚠️')
         messages.push(...changes.breakingChanges.map(c => `- ${c.message}`))
+        messages.push('')
         messages.push('Please consult to @green-labs/frontend')
         process.exitCode = 1
     }
