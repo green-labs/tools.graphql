@@ -376,6 +376,45 @@
    (when-let [query-def (get-in schema [:queries query-name])]
      (query&mutation->query schema "query" query-name query-def opts))))
 
+(defn ->query-interface
+  "인터페이스의 특정 구현체를 조회하는 쿼리. 해당 쿼리의 반환값은 인터페이스여야 한다.
+   node쿼리와 같이 많은 타입을 리턴하는 경우 불필요한 모든 타입을 쿼리하는 경우를 방지한다.
+
+   Arguments:
+   - query-name: 쿼리명. eg. :node
+   - imple-type: 조회할 해당 인터페이스의 구현체 목록. eg. [:CommunityPost :DirectDealPost]"
+  [schema
+   {:keys [query-name
+           impl-types]}
+   {:keys [max-depth]
+    :or   {max-depth 3}
+    :as   opts}]
+  (when-let [{:keys [args type]}  (get-in schema [:queries query-name])]
+    (let [query-args (args->query-args args)
+          field-def  (type->field-def schema type)
+          field-args (mapcat #(extract-field-args schema % {:max-depth max-depth
+                                                            :depth     2}) ;; 현재 깊이에 interface와 첫 필드 레벨 반영.
+                             impl-types)
+          opts       (merge {:depth     0
+                             :max-depth max-depth} opts)]
+      (str "query " (name query-name)
+           (->arg (->> (concat query-args field-args)
+                       (into {})))
+           " {\n"
+           (name query-name)
+           (when (seq args)
+             (->args args))
+           (let [children (->> impl-types
+                               (map #(let [children (select-field schema (type->field-def schema %) opts)]
+                                       (when (not-empty children)
+                                         (str "... on " (name %)
+                                              children))))
+                               (filter #(not-empty %)))]
+             (when (not-empty children)
+               (str (field-def->name field-def)
+                    (str " {\n" (s/join "\n" children) "\n}"))))
+           "\n}\n"))))
+
 (defn ->mutation
   "lacinia edn 에 있는 mutation 중 mutation-name 을 찾아 GraphQL에 요청 할 수 있는 mutation을 만듭니다.
   input
