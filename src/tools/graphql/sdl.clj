@@ -373,7 +373,8 @@
   ([schema query-name]
    (->query schema query-name {}))
   ([schema query-name opts]
-   (when-let [query-def (get-in schema [:queries query-name])]
+   (when-let [query-def (or (get-in schema [:queries query-name])
+                            (get-in schema [:objects :Query :fields query-name]))]
      (query&mutation->query schema "query" query-name query-def opts))))
 
 (defn ->query-interface
@@ -427,5 +428,6 @@
   ([schema mutation-name]
    (->mutation schema mutation-name {}))
   ([schema mutation-name opts]
-   (when-let [mutation-def (get-in schema [:mutations mutation-name])]
+   (when-let [mutation-def (or (get-in schema [:mutations mutation-name])
+                               (get-in schema [:objects :Mutation :fields mutation-name]))]
      (query&mutation->query schema "mutation" mutation-name mutation-def opts))))
