@@ -10,7 +10,7 @@
 const { Octokit } = require("octokit")
 const { fetch } = require("@whatwg-node/fetch")
 
-const SLACK_URL = 'https://hooks.slack.com/services/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'
+const SLACK_URL = 'https://hooks.slack.com/services/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'
 const GITHUB_OWNER = 'green-labs'
 const GITHUB_REPO = 'farmmorning-backend'
 
