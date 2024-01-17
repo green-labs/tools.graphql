@@ -15,4 +15,9 @@
            :SetOccupationResult {:fields      {:user {:type (non-null :User)}}
                                  :description "setOccupation의 정상 수행 결과"}
            :NotFoundError       {:implements [:Error]
-                                 :fields     {:message {:type String}}}}}
+                                 :fields     {:message {:type String}}}
+           :Nested              {:fields {:a {:type (non-null ID)}
+                                          :b {:type (non-null :Nested2)}}}
+           :Nested2             {:fields {:c {:type (non-null ID)}
+                                          :d {:type (non-null :Nested3)}}}
+           :Nested3             {:fields {:e {:type (non-null ID)}}}}}

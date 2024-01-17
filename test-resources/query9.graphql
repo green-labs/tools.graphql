@@ -1,0 +1,7 @@
+query nested {
+nested {
+b {
+c
+}
+}
+}

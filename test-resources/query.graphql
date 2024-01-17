@@ -33,4 +33,5 @@ type Query {
     """
     id: ID!
   ): Node
+  nested: Nested!
 }

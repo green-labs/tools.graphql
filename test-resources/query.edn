@@ -29,4 +29,7 @@
            :node                    {:args        {:id {:type        (non-null ID)
                                                         :description "The ID of an object"}}
                                      :type        :Node
-                                     :description "Node 조회"}}}
+                                     :description "Node 조회"}
+
+           ; fields-map 테스트용
+           :nested                  {:type (non-null :Nested)}}}

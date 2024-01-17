@@ -37,3 +37,17 @@ type SetOccupationResult {
 type NotFoundError implements Error {
   message: String
 }
+
+type Nested {
+  a: ID!
+  b: Nested2!
+}
+
+type Nested2 {
+  c: ID!
+  d: Nested3!
+}
+
+type Nested3 {
+  e: ID!
+}

@@ -251,7 +251,8 @@
     - field-def: 필드 정의 (objects에서 조회된 값. )
       - [field-name {:keys [type args fields]}]]
     - opts: option map
-      - max-depth: 쿼리문을 생성할 최대 깊이"
+      - max-depth: 쿼리문을 생성할 최대 깊이
+      - fields-map: 조회할 필드들을 map으로 조회합니다. (object type 만 지원)"
   (fn [schema field-def opts]
     (let [type (field-def->type field-def)]
       (cond
@@ -291,11 +292,17 @@
 
 (defmethod select-field :object
   [schema field-def opts]
-  (let [object   (get-object schema (field-def->type field-def))
-        children (->> (get object :fields {})
-                      (map (fn [field]
-                             (str (select-field schema field (update opts :depth inc)))))
-                      (filter #(not-empty %)))]
+  (let [fields-map (:fields-map opts)
+        object     (get-object schema (field-def->type field-def))
+        fields     (get object :fields {})
+        children   (->> (if-let [select-fields (keys fields-map)]
+                          (select-keys fields select-fields)
+                          fields)
+                        (map (fn [field]
+                               (str (select-field schema field (-> opts
+                                                                   (update :depth inc)
+                                                                   (update :fields-map (first field)))))))
+                        (filter #(not-empty %)))]
     (when (not-empty children)
       (let [children' (if (:typename? opts) (conj children "__typename") children)]
         (str (when-let [field-name (field-def->name field-def)]
@@ -316,7 +323,7 @@
   "재귀적으로 `max-depth`까지 필드의 인자를 모두 찾아서 반환"
   ([schema type]
    (extract-field-args schema type {:max-depth 3}))
-  ([schema type {:keys [depth max-depth]
+  ([schema type {:keys [depth max-depth fields-map]
                  :or   {depth 0}
                  :as   opts}]
    (let [return-only-type (inner-type type)]
@@ -332,22 +339,29 @@
             (mapcat (fn [type] (extract-field-args schema type opts))))
 
        :else
-       (->> (get (get-object schema return-only-type) :fields {})
-            (mapcat (fn [[field-name {:keys [type args]}]]
-                      (concat
-                       (when (get-object schema (inner-type type))
-                         (extract-field-args schema type (assoc opts :depth (inc depth))))
-                       (when args
-                         (args->query-args args (name field-name)))))))))))
+       (let [fields (get (get-object schema return-only-type) :fields {})]
+         (->> (if-let [select-fields (keys fields-map)]
+                (select-keys fields select-fields)
+                fields)
+              (mapcat (fn [[field-name {:keys [type args]}]]
+                        (concat
+                         (when (get-object schema (inner-type type))
+                           (extract-field-args schema type (assoc opts
+                                                                  :depth (inc depth)
+                                                                  :fields-map (field-name fields-map))))
+                         (when args
+                           (args->query-args args (name field-name))))))))))))
 
 
 (defn- query&mutation->query
-  [schema query-type query-name {:keys [args type]} {:keys [max-depth]
+  [schema query-type query-name {:keys [args type]} {:keys [max-depth fields-map]
                                                      :or   {max-depth 3}
                                                      :as   opts}]
-  (let [return-only-type (inner-type type)
+  (let [fields-map       (get fields-map query-name)
+        return-only-type (inner-type type)
         query-args       (args->query-args args)
-        field-args       (extract-field-args schema return-only-type {:max-depth max-depth})]
+        field-args       (extract-field-args schema return-only-type {:max-depth  max-depth
+                                                                      :fields-map fields-map})]
     (str query-type " " (name query-name)
          (->arg (->> (concat query-args field-args)
                      (into {})))
@@ -356,8 +370,9 @@
          (when (seq args)
            (->args args))
          (select-field schema (type->field-def schema return-only-type) (merge opts
-                                                                               {:depth     0
-                                                                                :max-depth max-depth}))
+                                                                               {:depth      0
+                                                                                :max-depth  max-depth
+                                                                                :fields-map fields-map}))
          "\n}\n")))
 
 (defn ->query
@@ -368,6 +383,7 @@
   - opts:
     - max-depth: 쿼리문을 생성할 최대 깊이
     - typename?: __typename 필드를 추가할지 여부
+    - fields-map: 조회할 field를 지정합니다. 최상위를 포함해야합니다. object만 지원합니다. ex: {:user {:id nil}}, nil은 하위 전체를 의미합니다.
   output
   - GraphQL query string"
   ([schema query-name]
