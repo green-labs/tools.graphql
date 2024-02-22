@@ -349,7 +349,7 @@
                            (extract-field-args schema type (assoc opts
                                                                   :depth (inc depth)
                                                                   :fields-map (field-name fields-map))))
-                         (when args
+                         (when (and args (<= depth max-depth))
                            (args->query-args args (name field-name))))))))))))
 
 
