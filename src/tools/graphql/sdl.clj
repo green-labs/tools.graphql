@@ -5,12 +5,11 @@
   #{:enums :interfaces :objects :queries :mutations :unions :input-objects :scalars})
 
 (defmulti ->sdl
-  "lacinia edn schema 를 graphql sdl 로 변환합니다."
   (fn [[k _]]
     (convert-keys k)))
 
 (defn edn->sdl
-  "lacinia edn schema 를 graphql sdl 로 변환합니다."
+  "Convert Lacinia schema edn to GraphQL SDL string."
   [m]
   (mapcat ->sdl (vec m)))
 
@@ -234,7 +233,7 @@
   [nil (-> (get-object schema type)
            (assoc :type type))])
 
-(defn implementition-types
+(defn implementation-types
   "인터페이스 구현체를 모두 찾는다."
   [schema interface]
   (let [objects (-> schema :objects)]
@@ -278,8 +277,8 @@
 
 (defmethod select-field :interface
   [schema field-def opts]
-  (let [implementition-types (implementition-types schema (field-def->type field-def))
-        children             (->> implementition-types
+  (let [implementation-types (implementation-types schema (field-def->type field-def))
+        children             (->> implementation-types
                                   (map #(let [children (select-field schema (type->field-def schema %) opts)]
                                           (when (not-empty children)
                                             (str "... on " (name %)
@@ -335,7 +334,7 @@
             (mapcat (fn [type] (extract-field-args schema type opts))))
 
        (get-in schema [:interfaces type])
-       (->> (implementition-types schema return-only-type)
+       (->> (implementation-types schema return-only-type)
             (mapcat (fn [type] (extract-field-args schema type opts))))
 
        :else
