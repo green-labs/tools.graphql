@@ -2,7 +2,8 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [tools.graphql.sdl :as sdl]
-            [tools.graphql.stitch.impl :as stitch])
+            [tools.graphql.stitch.impl :as stitch]
+            [tools.graphql.stitch.watch :as stitch.watch])
   (:import (java.io PushbackReader Writer)))
 
 (defn- is-path-under-dir? [file-path dir-path]
@@ -25,8 +26,9 @@
     :output-path  - path to write the final schema (optional)
     :transformers - a list of functions to transform the schema before stitching (optional)
     :pretty       - pretty print the output (optional)
+    :watch        - watch the input paths and stitch the schemas when subschemas are changed (optional)
   "
-  [& {:keys [input-paths output-path transformers pretty] :as _args}]
+  [& {:keys [input-paths output-path transformers pretty watch]}]
   (assert (sequential? input-paths))
 
   (let [subschemas  (stitch/read-subschemas input-paths {:transformers transformers})
@@ -39,10 +41,14 @@
           (throw (ex-info "output-file cannot located under input-path" {})))
         ;; must remove target file first
         (io/delete-file output-file :silent true)
-
-        (spit output-file (with-out-str (stitch/print-schema superschema :pretty pretty))))
+        (if watch
+          (stitch.watch/watch {:path-to-root (System/getProperty "user.dir")
+                               :dirs         input-paths
+                               :output-file  output-file
+                               :pretty       pretty
+                               :transformers transformers})
+          (spit output-file (with-out-str (stitch/print-schema superschema :pretty pretty)))))
       (:contents superschema))))
-
 
 (defn- write-sdl [^Writer writer schema]
   (loop [data (sdl/edn->sdl schema)]

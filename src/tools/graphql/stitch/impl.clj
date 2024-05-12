@@ -7,9 +7,9 @@
   "
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.pprint :as pprint]
             [clojure.set :as set]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [fipp.edn :refer [pprint]])
   (:import (java.io File PushbackReader)))
 
 (set! *warn-on-reflection* true)
@@ -23,8 +23,8 @@
 
 (defn read-edn
   "schema 스펙 확장을 지원하는 edn 리더"
-  [path]
-  (with-open [r (io/reader path)]
+  [in]
+  (with-open [r (io/reader in)]
     (edn/read {:default tagged-literal}
               (PushbackReader. r))))
 
@@ -68,11 +68,11 @@
 
 (defn read-subschemas
   "Read all subschemas in the given directory."
-  [patterns & {:as opts}]
-  (let [find-schemas (fn [pattern]
-                       (->> (file-seq (io/file pattern))
+  [dirs & {:as opts}]
+  (let [find-schemas (fn [dir]
+                       (->> (file-seq (io/file dir))
                             (filter (fn [^File f] (-> f .getName (.endsWith ".edn"))))))]
-    (->> patterns
+    (->> dirs
          (mapcat find-schemas)
          (pmap #(read-subschema % opts)))))
 
@@ -98,7 +98,7 @@
 (defn print-schema
   [^Subschema schema & {:keys [pretty] :as _opts}]
   (if pretty
-    (pprint/pprint (:contents schema))
+    (pprint (:contents schema) {:width 120})
     (pr (:contents schema))))
 
 (comment
