@@ -31,37 +31,36 @@
                  schema))
 
 (defn- make-edge-connection-types
-  ":Node 를 implements 하는 type인 경우 Edge, Connection 이 붙은 type 정보를 반환합니다.
+  [k]
+  (let [type-name       (name k)
+        edge-name       (keyword (str type-name "Edge"))
+        connection-name (keyword (str type-name "Connection"))]
+    [edge-name
+     {:implements [:Edge]
+      :fields     {:cursor {:type        '(non-null String)
+                            :description "Cursor"}
+                   :node   {:type        `(~'non-null ~k)
+                            :description "Node"}}}
+     connection-name
+     {:implements [:Connection]
+      :fields     {:edges    {:type        `(~'non-null (~'list (~'non-null ~edge-name)))
+                              :description "Edges"}
+                   :pageInfo {:type        '(non-null :PageInfo)
+                              :description "Page information"}
+                   :count    {:type        '(non-null Int)
+                              :description "Number of edges"}}}]))
 
-  FIX: 모든 노드가 커넥션이 될 수 있다는 전제로 타입을 확장하고 있음. 정확히 커넥션이 필요한 경우에만 확장될 수 있도록 새로운 방법을 찾아야 함."
-  [k v]
-  (when (contains? (set (:implements v)) :Node)
-    (let [type-name       (name k)
-          edge-name       (keyword (str type-name "Edge"))
-          connection-name (keyword (str type-name "Connection"))]
-      [edge-name
-       {:implements [:Edge]
-        :fields     {:cursor {:type        '(non-null String)
-                              :description "Cursor"}
-                     :node   {:type        `(~'non-null ~k)
-                              :description "Node"}}}
-       connection-name
-       {:implements [:Connection]
-        :fields     {:edges    {:type        `(~'non-null (~'list (~'non-null ~edge-name)))
-                                :description "Edges"}
-                     :pageInfo {:type        '(non-null :PageInfo)
-                                :description "Page information"}
-                     :count    {:type        '(non-null Int)
-                                :description "Number of edges"}}}])))
-
-(defn extend-relay-types
-  "lacinia schema 에서 정의한 objects 들에게
-   Graphql relay spec 에 맞는 edges, connections 를 추가해줍니다."
+(defn relay-pagination
+  ":pagination key 가 :relay 인 type 들에게 Graphql relay spec 에 맞는 edges, connections 를 추가해줍니다.
+   커넥션 스펙은 https://relay.dev/graphql/connections.htm 참고"
   [schema]
   (update schema :objects
           #(reduce-kv (fn [m k v]
-                        (apply assoc m
-                               (concat [k v] (make-edge-connection-types k v))))
+                        (if (= (:pagination v) :relay)
+                          (as-> m $
+                            (assoc $ k (dissoc v :pagination))
+                            (apply assoc $ (make-edge-connection-types k)))
+                          (assoc m k v)))
                       {} %)))
 
 (comment
