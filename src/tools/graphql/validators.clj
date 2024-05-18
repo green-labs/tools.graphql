@@ -50,9 +50,12 @@
         unreachable? (fn [t]
                        (nil? (m/find {:schema schema
                                       :type   t}
-                                     {:schema {(m/or :query :mutations) {?query {:args {?input {:type (m/$ ?t)}}}}}
+                                     {:schema {(m/or :queries :mutations) {?query {:args {?input {:type (m/$ ?t)}}}}}
                                       :type   ?t}
-                                     ?input)))]
+                                     ?query
+                                     {:schema {:input-objects {?type {:fields {?field {:type (m/$ ?t)}}}}}
+                                      :type   ?t}
+                                     ?type)))]
     (println "input-types:" (sort types))
     (filter unreachable? types)))
 
@@ -61,7 +64,6 @@
   (require '[tools.graphql.stitch.impl :refer [read-edn]]
            '[clojure.java.io :as io])
   (def schema (read-edn (io/file "../../bases/core-api/resources/superschema.edn")))
-  (def schema (read-edn (io/file "../../bases/core-api/resources/schema/user.edn")))
   (def schema (read-edn (io/file (io/resource "unreachable.edn"))))
 
   (unreachable-types schema)

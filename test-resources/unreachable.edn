@@ -10,11 +10,15 @@
                                     :day   {:type Int}}}
                  :Nesting {:fields {:id {:type String}}}
                  :Dummy   {:fields {:id {:type String}}}}
- :input-objects {:UserInput  {:fields {:name     {:type String}
-                                       :email    {:type String}
-                                       :password {:type String}}}
-                 :DummyInput {:fields {:id {:type String}}}}
- :queries       {:user    {:type :User}
+ :input-objects {:UserInput    {:fields {:name     {:type String}
+                                         :email    {:type String}
+                                         :password {:type String}}}
+                 :SomeInput    {:fields {:id      {:type String}
+                                         :another {:type :AnotherInput}}}
+                 :AnotherInput {:fields {:id {:type String}}}
+                 :DummyInput   {:fields {:id {:type String}}}}
+ :queries       {:user    {:type :User
+                           :args {:input {:type :SomeInput}}}
                  :nesting {:type (non-null (list (non-null :Nesting)))}}
  :mutations     {:createUser    {:type :User}
                  :updateUser    {:type :User
