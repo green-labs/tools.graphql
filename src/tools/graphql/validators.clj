@@ -1,6 +1,31 @@
 (ns tools.graphql.validators
   (:require [meander.epsilon :as m]))
 
+(defn- graphql-type?
+  "
+  <type> ::= <named_type>
+           | <list_type>
+           | <non_null_type>
+
+  <list_type> ::= \"[\" <type> \"]\"
+
+  <non_null_type> ::= <type> \"!\"
+
+  <named_type> ::= <type_name>
+
+  <type_name> ::= <name>
+
+  <name> ::= [_A-Za-z][_0-9A-Za-z]*
+  "
+  [t]
+  (m/find t
+          (m/with [%list-type     (list %type)
+                   %non-null-type (non-null %type)
+                   %named-type    (m/keyword !type-name)
+                   %type          (m/or %named-type %list-type %non-null-type)]
+            %type)
+          !type-name))
+
 (defn unreachable-types [schema]
   (let [types        (m/search schema
                                {:objects {?type _}}
@@ -8,17 +33,15 @@
         unreachable? (fn [t]
                        (nil? (m/find {:schema schema
                                       :type   t}
-                                     {:schema {:objects {?type {:fields {?field {:type ?t}}}}}
+                                     {:schema {:objects {?type {:fields {?field {:type (m/$ ?t)}}}}}
                                       :type   ?t}
                                      ?field
                                      ;; TODO: input-objects, enums, interfaces, unions
-                                     {:schema {:queries {?query {:type ?t}}}
+                                     {:schema {(m/or :queries :mutations) {?qm {:type (m/$ ?t)}}}
                                       :type   ?t}
-                                     ?query
-                                     {:schema {:mutations {?mutations {:type ?t}}}
-                                      :type   ?t}
-                                     ?mutations)))]
-    {:unreachable-types (filter unreachable? types)}))
+                                     ?qm)))]
+    (println "types:" (sort types))
+    (filter unreachable? types)))
 
 (defn unreachable-input-types [schema]
   (let [types        (m/search schema
@@ -27,34 +50,30 @@
         unreachable? (fn [t]
                        (nil? (m/find {:schema schema
                                       :type   t}
-                                     {:schema {:query {?query {:args {?input {:type ?t}}}}}
-                                      :type   ?t}
-                                     ?input
-                                     {:schema {:mutations {?mutations {:args {?input {:type ?t}}}}}
+                                     {:schema {(m/or :query :mutations) {?query {:args {?input {:type (m/$ ?t)}}}}}
                                       :type   ?t}
                                      ?input)))]
-    {:unreachable-input-types (filter unreachable? types)}))
-
-
+    (println "input-types:" (sort types))
+    (filter unreachable? types)))
 
 (comment
 
-  (def schema {:input-objects {:UserInput {:fields {:name     {:type 'String}
-                                                    :email    {:type 'String}
-                                                    :password {:type 'String}}}
-                               :Dummy     {:fields {:id {:type 'String}}}}
-               :objects       {:User {:fields {:id        {:type 'String}
-                                               :name      {:type 'String}
-                                               :email     {:type 'String}
-                                               :password  {:type 'String}
-                                               :createdAt {:type 'String}
-                                               :updatedAt {:type 'String}
-                                               :deletedAt {:type :Date}}}}
-               :queries       {:user  {:type :User}
-                               :users {:type '(non-null (list (non-null User)))}}
-               :mutations     {:updateUser {:type :User
-                                            :args {:input {:type :UserInput}}}}})
+  (require '[tools.graphql.stitch.impl :refer [read-edn]]
+           '[clojure.java.io :as io])
+  (def schema (read-edn (io/file "../../bases/core-api/resources/superschema.edn")))
+  (def schema (read-edn (io/file "../../bases/core-api/resources/schema/user.edn")))
+  (def schema (read-edn (io/file (io/resource "unreachable.edn"))))
 
+  (unreachable-types schema)
   (unreachable-input-types schema)
 
-  )
+  ;; can we match :User with (list (non-null User)) ?
+
+  (let [ts [:User
+            '(list :User)
+            '(non-null :User)
+            '(list (non-null :User))
+            '(non-null (list :User))
+            '(non-null (list (list :User)))
+            '(:User list)]]
+    (map graphql-type? ts)))

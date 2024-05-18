@@ -1,0 +1,28 @@
+{:objects       {:User    {:fields {:id        {:type String}
+                                    :name      {:type String}
+                                    :email     {:type String}
+                                    :password  {:type String}
+                                    :createdAt {:type String}
+                                    :updatedAt {:type String}
+                                    :deletedAt {:type :Date}}}
+                 :Date    {:fields {:year  {:type Int}
+                                    :month {:type Int}
+                                    :day   {:type Int}}}
+                 :Nesting {:fields {:id {:type String}}}
+                 :Dummy   {:fields {:id {:type String}}}}
+ :input-objects {:UserInput  {:fields {:name     {:type String}
+                                       :email    {:type String}
+                                       :password {:type String}}}
+                 :DummyInput {:fields {:id {:type String}}}}
+ :queries       {:user    {:type :User}
+                 :nesting {:type (non-null (list (non-null :Nesting)))}}
+ :mutations     {:createUser    {:type :User}
+                 :updateUser    {:type :User
+                                 :args {:input {:type :UserInput}}}
+                 :deleteUser    {:type :User}
+                 :createPost    {:type :Post}
+                 :updatePost    {:type :Post}
+                 :deletePost    {:type :Post}
+                 :createComment {:type :Comment}
+                 :updateComment {:type :Comment}
+                 :deleteComment {:type :Comment}}}
