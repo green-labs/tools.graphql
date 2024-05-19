@@ -1,5 +1,6 @@
 (ns tools.graphql.validators
-  (:require [meander.epsilon :as m]))
+  (:require [clojure.string :as str]
+            [meander.epsilon :as m]))
 
 (defn graphql-type?
   "Can we match :User with (list (non-null User)) ?
@@ -24,28 +25,35 @@
 
 (defn unreachable-types [schema]
   (let [types        (m/search schema
-                               {:objects {?type _}}
+                               {(m/or :objects :enums :unions) {?type _}}
                                ?type)
         unreachable? (fn [t]
                        (nil? (m/find {:schema schema
                                       :type   t}
-                                     ;; objects
-                                     {:schema {:objects {?type {:fields {?field {:type (m/$ ?t)}}}}}
+                                     ;; [field type] objects, input-objects and interfaces
+                                     {:schema {(m/or :objects :input-objects :interfaces) {?type {:fields {?field {:type (m/$ ?t)}}}}}
                                       :type   ?t}
                                      ?field
 
-                                     ;; queries and mutations
+                                     ;; [argument type] objects and interfaces
+                                     {:schema {:objects {?tn {:fields {?fn {:args {?an {:type (m/$ ?t)}}}}}}}
+                                      :type   ?t}
+                                     ?an
+
+                                     ;; [field type] queries and mutations
                                      {:schema {(m/or :queries :mutations) {?qm {:type (m/$ ?t)}}}
+                                      :type   ?t}
+                                     ?qm
+
+                                     ;; [argument type] queries and mutations
+                                     {:schema {(m/or :queries :mutations) {?qm {:args {?input {:type (m/$ ?t)}}}}}
                                       :type   ?t}
                                      ?qm
 
                                      ;; unions
                                      {:schema {:unions {?union {:members (m/$ ?t)}}}
                                       :type   ?t}
-                                     ?union
-
-                                     ;; TODO: input-objects, enums, interfaces
-                                     )))]
+                                     ?union)))]
     (println "types:" (sort types))
     (filter unreachable? types)))
 
@@ -72,7 +80,9 @@
   (def schema (read-edn (io/file "../../bases/core-api/resources/superschema.edn")))
   (def schema (read-edn (io/file (io/resource "unreachable.edn"))))
 
-  (unreachable-types schema)
+  (->> (unreachable-types schema)
+       (remove #(str/ends-with? (name %) "Connection"))
+       #_(count))
   (unreachable-input-types schema)
 
   :rcf)

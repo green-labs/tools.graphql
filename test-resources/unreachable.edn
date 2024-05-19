@@ -10,6 +10,8 @@
                                     :day   {:type Int}}}
                  :Nesting {:fields {:id {:type String}}}
                  :Dummy   {:fields {:id {:type String}}}}
+ :enums         {:Role       {:values [:ADMIN :USER]}
+                 :UnusedEnum {:values [:UNUSED]}}
  :input-objects {:UserInput    {:fields {:name     {:type String}
                                          :email    {:type String}
                                          :password {:type String}}}

@@ -37,7 +37,7 @@
   (testing "object referenced in union"
     (let [schema {:objects {:UnionMember {:fields {:id {:type 'String}}}}
                   :unions  {:TheUnion {:members [:Pre1 :Pre2 :UnionMember :Post1 :Post2]}}}]
-      (is (= [] (v/unreachable-types schema))))))
+      (is (= [:TheUnion] (v/unreachable-types schema))))))
 
 (deftest no-unreachable-input-types
   (testing "input-object not referenced in any query or mutation"
