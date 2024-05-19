@@ -1,9 +1,11 @@
 (ns tools.graphql.api
-  (:require [clojure.edn :as edn]
+  (:require [clj-commons.ansi :refer [pcompose]]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [tools.graphql.sdl :as sdl]
-            [tools.graphql.stitch.impl :as stitch]
-            [tools.graphql.stitch.watch :as stitch.watch])
+            [tools.graphql.stitch.core :as stitch]
+            [tools.graphql.stitch.watch :as stitch.watch]
+            [tools.graphql.validators :as validators])
   (:import (java.io PushbackReader Writer)))
 
 (defn- is-path-under-dir? [file-path dir-path]
@@ -94,3 +96,13 @@
   (->> (scan-vars input-path)
        (map (comp symbol namespace))
        (distinct)))
+
+(defn validate
+  [& {:keys [input-path]}]
+  (let [schema (stitch/read-edn (io/file input-path))]
+    (doseq [t (validators/unreachable-types schema)]
+      (pcompose [:red "Unreachable type"] " " (name t)))
+    (doseq [f (validators/unreachable-input-types schema)]
+      (pcompose [:red "Unreachable input"] " " (name f)))
+    (doseq [i (validators/unreachable-interfaces schema)]
+      (pcompose [:red "Unreachable interface"] " " (name i)))))

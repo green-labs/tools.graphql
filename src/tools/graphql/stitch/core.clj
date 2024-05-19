@@ -1,4 +1,4 @@
-(ns tools.graphql.stitch.impl
+(ns tools.graphql.stitch.core
   "Lacinia 의 스키마를 분할하여 관리할 수 있도록 도와주는 API
   특정 경로 하위에 있는 모든 .edn 파일을 읽어서 스키마를 합친 뒤, output 에 해당하는 최종 스키마 파일을 생성합니다.
 

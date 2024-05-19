@@ -1,6 +1,6 @@
 (ns tools.graphql.stitch.watch
   (:require [clojure.java.io :as io]
-            [tools.graphql.stitch.impl :as stitch]
+            [tools.graphql.stitch.core :as stitch]
             [tools.graphql.stitch.watchman :as watchman]))
 
 (def path->schema (atom {}))

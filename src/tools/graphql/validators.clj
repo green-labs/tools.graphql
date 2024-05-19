@@ -1,5 +1,6 @@
 (ns tools.graphql.validators
   (:require [clojure.string :as str]
+            [clojure.tools.logging :as log]
             [meander.epsilon :as m]))
 
 (defn graphql-type?
@@ -54,7 +55,7 @@
                                      {:schema {:unions {?union {:members (m/$ ?t)}}}
                                       :type   ?t}
                                      ?union)))]
-    (println "types:" (sort types))
+    (log/debug "types:" (sort types))
     (filter unreachable? types)))
 
 (defn unreachable-input-types [schema]
@@ -70,7 +71,7 @@
                                      {:schema {:input-objects {?type {:fields {?field {:type (m/$ ?t)}}}}}
                                       :type   ?t}
                                      ?type)))]
-    (println "input-types:" (sort types))
+    (log/debug "input-types:" (sort types))
     (filter unreachable? types)))
 
 (defn unreachable-interfaces [schema]
@@ -83,12 +84,12 @@
                                      {:schema    {(m/or :objects :interfaces) {?type {:implements (m/$ ?ifc)}}}
                                       :interface ?ifc}
                                      ?type)))]
-    (println "interfaces:" (sort ifcs))
+    (log/debug "interfaces:" (sort ifcs))
     (filter unreachable? ifcs)))
 
 (comment
 
-  (require '[tools.graphql.stitch.impl :refer [read-edn]]
+  (require '[tools.graphql.stitch.core :refer [read-edn]]
            '[clojure.java.io :as io])
   (def schema (read-edn (io/file "../../bases/core-api/resources/superschema.edn")))
   (def schema (read-edn (io/file (io/resource "unreachable.edn"))))
