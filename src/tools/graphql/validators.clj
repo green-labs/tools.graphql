@@ -73,6 +73,19 @@
     (println "input-types:" (sort types))
     (filter unreachable? types)))
 
+(defn unreachable-interfaces [schema]
+  (let [ifcs         (m/search schema
+                               {:interfaces {?ifc _}}
+                               ?ifc)
+        unreachable? (fn [ifc]
+                       (nil? (m/find {:schema    schema
+                                      :interface ifc}
+                                     {:schema    {(m/or :objects :interfaces) {?type {:implements (m/$ ?ifc)}}}
+                                      :interface ?ifc}
+                                     ?type)))]
+    (println "interfaces:" (sort ifcs))
+    (filter unreachable? ifcs)))
+
 (comment
 
   (require '[tools.graphql.stitch.impl :refer [read-edn]]
@@ -83,6 +96,9 @@
   (->> (unreachable-types schema)
        (remove #(str/ends-with? (name %) "Connection"))
        #_(count))
+
+  (unreachable-types schema)
   (unreachable-input-types schema)
+  (unreachable-interfaces schema)
 
   :rcf)

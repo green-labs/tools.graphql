@@ -57,4 +57,21 @@
                                   :AnotherInput {:fields {:id {:type String}}}}}]
       (is (= [:SomeInput] (v/unreachable-input-types schema))))))
 
+(deftest no-unreachable-interfaces
+  (testing "interface not implemented by any object"
+    (let [schema {:interfaces {:Node     {:fields {:id {:type 'String}}}
+                               :UnusedIf {:fields {:id {:type 'String}}}}
+                  :objects    {:User    {:fields {:id        {:type 'String}
+                                                  :name      {:type 'String}
+                                                  :email     {:type 'String}
+                                                  :password  {:type 'String}
+                                                  :createdAt {:type 'String}
+                                                  :updatedAt {:type 'String}
+                                                  :deletedAt {:type :Date}}}
+                               :Nesting {:fields {:id {:type 'String}}}
+                               :MyNode  {:implements [:Node]
+                                         :fields     {:id {:type 'String}}}
+                               :Dummy   {:fields {:id {:type 'String}}}}}]
+      (is (= [:UnusedIf] (v/unreachable-interfaces schema))))))
+
 (run-tests)

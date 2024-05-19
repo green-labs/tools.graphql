@@ -1,4 +1,6 @@
-{:objects       {:User    {:fields {:id        {:type String}
+{:interfaces    {:Node     {:fields {:id {:type String}}}
+                 :UnusedIf {:fields {:id {:type String}}}}
+ :objects       {:User    {:fields {:id        {:type String}
                                     :name      {:type String}
                                     :email     {:type String}
                                     :password  {:type String}
@@ -9,6 +11,8 @@
                                     :month {:type Int}
                                     :day   {:type Int}}}
                  :Nesting {:fields {:id {:type String}}}
+                 :MyNode  {:implements [:Node]
+                           :fields     {:id {:type String}}}
                  :Dummy   {:fields {:id {:type String}}}}
  :enums         {:Role       {:values [:ADMIN :USER]}
                  :UnusedEnum {:values [:UNUSED]}}
