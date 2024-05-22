@@ -25,9 +25,9 @@
                  !type-name)))
 
 (defn unreachable-types [schema]
-  (let [types        (m/search schema
-                               {(m/or :objects :enums :unions) {?type _}}
-                               ?type)
+  (let [types        (sort (m/search schema
+                                     {(m/or :objects :enums :unions) {?type _}}
+                                     ?type))
         unreachable? (fn [t]
                        (nil? (m/find {:schema schema
                                       :type   t}
@@ -55,13 +55,13 @@
                                      {:schema {:unions {?union {:members (m/$ ?t)}}}
                                       :type   ?t}
                                      ?union)))]
-    (log/debug "types:" (sort types))
+    (log/debug "types:" types)
     (filter unreachable? types)))
 
 (defn unreachable-input-types [schema]
-  (let [types        (m/search schema
-                               {:input-objects {?type _}}
-                               ?type)
+  (let [types        (sort (m/search schema
+                                     {:input-objects {?type _}}
+                                     ?type))
         unreachable? (fn [t]
                        (nil? (m/find {:schema schema
                                       :type   t}
@@ -71,20 +71,20 @@
                                      {:schema {:input-objects {?type {:fields {?field {:type (m/$ ?t)}}}}}
                                       :type   ?t}
                                      ?type)))]
-    (log/debug "input-types:" (sort types))
+    (log/debug "input-types:" types)
     (filter unreachable? types)))
 
 (defn unreachable-interfaces [schema]
-  (let [ifcs         (m/search schema
-                               {:interfaces {?ifc _}}
-                               ?ifc)
+  (let [ifcs         (sort (m/search schema
+                                     {:interfaces {?ifc _}}
+                                     ?ifc))
         unreachable? (fn [ifc]
                        (nil? (m/find {:schema    schema
                                       :interface ifc}
                                      {:schema    {(m/or :objects :interfaces) {?type {:implements (m/$ ?ifc)}}}
                                       :interface ?ifc}
                                      ?type)))]
-    (log/debug "interfaces:" (sort ifcs))
+    (log/debug "interfaces:" ifcs)
     (filter unreachable? ifcs)))
 
 (comment

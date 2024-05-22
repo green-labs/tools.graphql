@@ -65,7 +65,7 @@
 
   args:
     :input-path - path to read the edn file
-    :output-path - path to write the SDL file (optional)"
+    :output-path - path to write the SDL file. If not provided, write to stdout. (optional)"
   [& {:keys [input-path output-path]}]
   (assert (string? input-path))
 
@@ -98,6 +98,10 @@
        (distinct)))
 
 (defn validate
+  "Validate the edn GraphQL schema.
+
+  args:
+    :input-path - path to read the schema"
   [& {:keys [input-path]}]
   (let [schema (stitch/read-edn (io/file input-path))]
     (doseq [t (validators/unreachable-types schema)]
