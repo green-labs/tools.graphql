@@ -87,11 +87,16 @@
     (log/debug "interfaces:" ifcs)
     (filter unreachable? ifcs)))
 
+(defn no-root-resolver [schema]
+  (m/search schema
+            {(m/or :queries :mutations) {?qm {:resolve (m/and nil ?resolver)}}}
+            ?qm))
+
 (comment
 
   (require '[tools.graphql.stitch.core :refer [read-edn]]
            '[clojure.java.io :as io])
-  (def schema (read-edn (io/file "../../bases/core-api/resources/superschema.edn")))
+  (def schema (read-edn (io/file "../farmmorning-backend/bases/core-api/resources/superschema.edn")))
   (def schema (read-edn (io/file (io/resource "unreachable.edn"))))
 
   (->> (unreachable-types schema)
@@ -101,5 +106,7 @@
   (unreachable-types schema)
   (unreachable-input-types schema)
   (unreachable-interfaces schema)
+
+  (no-root-resolver schema)
 
   :rcf)

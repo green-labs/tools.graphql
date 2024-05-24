@@ -27,8 +27,8 @@
                                                :month {:type 'Int}
                                                :day   {:type 'Int}}}
                               :Dummy {:fields {:id {:type 'String}}}}
-                  :queries   {:user     {:type :User}
-                              :users    {:type '(non-null (list (non-null :User)))}}
+                  :queries   {:user  {:type :User}
+                              :users {:type '(non-null (list (non-null :User)))}}
                   :mutations {:createUser {:type :User}
                               :updateUser {:type :User}
                               :deleteUser {:type :User}}}]
@@ -73,5 +73,20 @@
                                          :fields     {:id {:type 'String}}}
                                :Dummy   {:fields {:id {:type 'String}}}}}]
       (is (= [:UnusedIf] (v/unreachable-interfaces schema))))))
+
+(deftest no-root-resolver
+  (testing "query or mutation without resolver"
+    (let [schema {:queries   {:user {:type :User}}
+                  :mutations {:createUser {:type :User}
+                              :updateUser {:type :User}
+                              :deleteUser {:type :User}}}]
+      (is (= [:user :createUser :updateUser :deleteUser]
+             (v/no-root-resolver schema)))))
+
+  (testing "resolver is 'maybe' or nil assigned"
+    (let [schema {:queries {:q {:resolve clojure.core/identity}
+                            :r {:resolve nil}
+                            :s {}}}]
+      (is (= [:r :s] (v/no-root-resolver schema))))))
 
 (run-tests)
