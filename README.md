@@ -49,7 +49,7 @@ The `stitch-schemas` function will only generate the final schema if it can merg
 
 If you frequently need to merge schemas during development, you can add the `:watch true` parameter to enable the watch feature. To use watch, Watchman must be installed on your system.
 
-Note: It is recommended to version control the final generated schema.
+Note: It is recommended to commit the stitched schema alongside with subschemas.
 
 ### Schema Static Analysis
 
