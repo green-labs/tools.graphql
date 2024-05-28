@@ -60,3 +60,16 @@ clojure -Tgraphql validate :input-path '"path/to/schema.edn"'
 ```
 
 This command will identify unused `type`, `input`, `enum`, `union`, and `interface`.
+
+Example:
+
+```text
+Unreachable type UrlConnection bases/core-api/resources/schema/common.edn:62:30
+Unreachable type UserAddressConnection
+Unreachable type YoutubeConnection
+Unreachable input GroupMembershipUpdateInput bases/core-api/resources/schema/farming_group.edn:238:3
+Unreachable input ProductionCategoryCodeInput bases/core-api/resources/schema/pesticide.edn:141:47
+Unreachable interface Node bases/core-api/resources/schema/common.edn:6:1
+```
+
+To output the location in the subschema, you must set `:source-map?` option to true when stitching.
