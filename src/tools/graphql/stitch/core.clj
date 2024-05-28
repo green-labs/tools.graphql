@@ -9,24 +9,29 @@
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.tools.logging :as log]
+            [edamame.core :as eda]
             [fipp.edn :refer [pprint]])
   (:import (java.io File PushbackReader)))
 
-(set! *warn-on-reflection* true)
-
-(defrecord Subschema [path contents])
+(defrecord Subschema [path name contents])
 
 (defn- validate-subschema!
-  [path {:keys [queries mutations]}]
-  (when (or (seq queries) (seq mutations))
-    (log/warn ":queries and :mutations keys are deprecated." (str "(" path ")"))))
+  [^Subschema {:keys [path contents]}]
+  (let [{:keys [queries mutations]} contents]
+    (when (or (seq queries) (seq mutations))
+      (log/warn ":queries and :mutations keys are deprecated." (str "(" path ")")))))
 
 (defn read-edn
   "schema 스펙 확장을 지원하는 edn 리더"
-  [in]
-  (with-open [r (io/reader in)]
-    (edn/read {:default tagged-literal}
-              (PushbackReader. r))))
+  ([in] (read-edn in false))
+  ([in source-map?]
+   (if source-map?
+     (eda/parse-string (slurp in)
+                       {:readers {'var #(tagged-literal 'var %)}})
+
+     (with-open [r (io/reader in)]
+       (edn/read {:default tagged-literal}
+                 (PushbackReader. r))))))
 
 (defn- assoc-when
   "When the value is not nil, assoc the key-value pair."
@@ -37,7 +42,7 @@
 
 (defn normalize-root-objects
   "Reserved names for top-level objects in Lacinia are Query, Mutation, Subscription.
-  Bring them up to :queries, :mutations, :subscription."
+  Bring them up to :queries, :mutations and :subscriptions keys. (old notation)"
   [schema]
   (-> schema
       (assoc-when :queries (get-in schema [:objects :Query :fields]))
@@ -53,18 +58,19 @@
     path - path to read the subschema
     opts:
       :transformers - a list of functions to transform the schema before stitching."
-  [^File path & {:keys [transformers]}]
-  (let [contents     (read-edn path)
-        transformers (conj (vec transformers) normalize-root-objects)
+  [^File path & {:keys [source-map? transformers]}]
+  (let [contents    (read-edn path source-map?)
+        subschema   (map->Subschema {:path     path
+                                     :name     (.getName path)
+                                     :contents (normalize-root-objects contents)})
 
         ;; transform
-        contents     (reduce (fn [schema f] (f schema)) contents transformers)
+        transformer (apply comp transformers)
+        subschema   (transformer subschema)
 
         ;; validate
-        _            (validate-subschema! path contents)]
-    (map->Subschema {:path     path
-                     :name     (.getName path)
-                     :contents contents})))
+        _           (validate-subschema! subschema)]
+    subschema))
 
 (defn read-subschemas
   "Read all subschemas in the given directory."
@@ -103,13 +109,8 @@
 
 (comment
 
-  (read-subschemas ["../../bases/core-api/resources/schema"
-                    "../../bases/core-api/src"])
-
-  (def subschemas
-    (read-subschemas ["../../bases/core-api/resources/schema"]))
-
-  (read-subschema (io/file "../../bases/core-api/resources/schema/user.edn"))
+  (read-subschema (io/file "test-resources/subschemas/user.edn"))
+  (def subschemas (read-subschemas ["test-resources/subschemas"]))
 
   (let [whole (time (reduce stitch-subschemas subschemas))]
     (time (print-schema whole :pretty false)))
