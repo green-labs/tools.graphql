@@ -32,12 +32,12 @@
                   :mutations {:createUser {:type :User}
                               :updateUser {:type :User}
                               :deleteUser {:type :User}}}]
-      (is (= [:Dummy] (v/unreachable-types schema)))))
+      (is (= [[:Dummy nil]] (v/unreachable-types schema)))))
 
   (testing "object referenced in union"
     (let [schema {:objects {:UnionMember {:fields {:id {:type 'String}}}}
                   :unions  {:TheUnion {:members [:Pre1 :Pre2 :UnionMember :Post1 :Post2]}}}]
-      (is (= [:TheUnion] (v/unreachable-types schema))))))
+      (is (= [[:TheUnion nil]] (v/unreachable-types schema))))))
 
 (deftest no-unreachable-input-types
   (testing "input-object not referenced in any query or mutation"
@@ -49,13 +49,13 @@
                                   :users {:type '(non-null (list (non-null :User)))}}
                   :mutations     {:updateUser {:type :User
                                                :args {:input {:type :UserInput}}}}}]
-      (is (= [:Dummy] (v/unreachable-input-types schema)))))
+      (is (= [[:Dummy nil]] (v/unreachable-input-types schema)))))
 
   (testing "input-object referenced in another input-object"
     (let [schema {:input-objects {:SomeInput    {:fields {:id      {:type String}
                                                           :another {:type :AnotherInput}}}
                                   :AnotherInput {:fields {:id {:type String}}}}}]
-      (is (= [:SomeInput] (v/unreachable-input-types schema))))))
+      (is (= [[:SomeInput nil]] (v/unreachable-input-types schema))))))
 
 (deftest no-unreachable-interfaces
   (testing "interface not implemented by any object"
@@ -72,7 +72,7 @@
                                :MyNode  {:implements [:Node]
                                          :fields     {:id {:type 'String}}}
                                :Dummy   {:fields {:id {:type 'String}}}}}]
-      (is (= [:UnusedIf] (v/unreachable-interfaces schema))))))
+      (is (= [[:UnusedIf nil]] (v/unreachable-interfaces schema))))))
 
 (deftest no-root-resolver
   (testing "query or mutation without resolver"
