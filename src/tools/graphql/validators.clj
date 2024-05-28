@@ -26,9 +26,9 @@
 
 (defn unreachable-types [schema]
   (let [types        (sort (m/search schema
-                                     {(m/or :objects :enums :unions) {?type _}}
-                                     ?type))
-        unreachable? (fn [t]
+                                     {(m/or :objects :enums :unions) {?type {:loc ?loc}}}
+                                     [?type ?loc]))
+        unreachable? (fn [[t]]
                        (nil? (m/find {:schema schema
                                       :type   t}
                                      ;; [field type] objects, input-objects and interfaces
@@ -60,9 +60,9 @@
 
 (defn unreachable-input-types [schema]
   (let [types        (sort (m/search schema
-                                     {:input-objects {?type _}}
-                                     ?type))
-        unreachable? (fn [t]
+                                     {:input-objects {?type {:loc ?loc}}}
+                                     [?type ?loc]))
+        unreachable? (fn [[t]]
                        (nil? (m/find {:schema schema
                                       :type   t}
                                      {:schema {(m/or :queries :mutations) {?query {:args {?input {:type (m/$ ?t)}}}}}
@@ -76,9 +76,9 @@
 
 (defn unreachable-interfaces [schema]
   (let [ifcs         (sort (m/search schema
-                                     {:interfaces {?ifc _}}
-                                     ?ifc))
-        unreachable? (fn [ifc]
+                                     {:interfaces {?ifc {:loc ?loc}}}
+                                     [?ifc ?loc]))
+        unreachable? (fn [[ifc]]
                        (nil? (m/find {:schema    schema
                                       :interface ifc}
                                      {:schema    {(m/or :objects :interfaces) {?type {:implements (m/$ ?ifc)}}}

@@ -15,11 +15,14 @@
 
 (defrecord Subschema [path name contents])
 
+(def ^:dynamic *modern-syntax?* true)
+
 (defn- validate-subschema!
   [^Subschema {:keys [path contents]}]
-  (let [{:keys [queries mutations]} contents]
-    (when (or (seq queries) (seq mutations))
-      (log/warn ":queries and :mutations keys are deprecated." (str "(" path ")")))))
+  (when *modern-syntax?*
+    (let [{:keys [queries mutations]} contents]
+      (when (or (seq queries) (seq mutations))
+        (log/warn ":queries and :mutations keys are deprecated." (str "(" path ")"))))))
 
 (defn read-edn
   "schema 스펙 확장을 지원하는 edn 리더"
@@ -50,6 +53,14 @@
       (assoc-when :subscriptions (get-in schema [:objects :Subscription :fields]))
       (update :objects dissoc :Query :Mutation :Subscription)))
 
+(defn source-map
+  [path]
+  (fn [schema]
+    (let [embed-loc #(update-vals % (fn [v]
+                                      (let [loc (assoc (meta v) :path path)]
+                                        (assoc v :loc loc))))]
+      (update-vals schema embed-loc))))
+
 (defn read-subschema
   "Read a subschema from the given path.
   TODO: validate if it's valid lacinia schema.
@@ -59,14 +70,15 @@
     opts:
       :transformers - a list of functions to transform the schema before stitching."
   [^File path & {:keys [source-map? transformers]}]
-  (let [contents    (read-edn path source-map?)
-        subschema   (map->Subschema {:path     path
-                                     :name     (.getName path)
-                                     :contents (normalize-root-objects contents)})
+  (let [contents    (cond-> (read-edn path source-map?)
+                            *modern-syntax?* normalize-root-objects
+                            source-map? ((source-map (.getPath path))))
 
         ;; transform
         transformer (apply comp transformers)
-        subschema   (transformer subschema)
+        subschema   (map->Subschema {:path     path
+                                     :name     (.getName path)
+                                     :contents (transformer contents)})
 
         ;; validate
         _           (validate-subschema! subschema)]
@@ -114,5 +126,10 @@
 
   (let [whole (time (reduce stitch-subschemas subschemas))]
     (time (print-schema whole :pretty false)))
+
+  (validate-subschema!)
+
+  (let [schema (read-subschema (io/file "test-resources/subschemas/cart.edn") :source-map? true)]
+    schema)
 
   :rcf)

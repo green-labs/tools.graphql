@@ -29,11 +29,13 @@
     :transformers - a list of functions to transform the schema before stitching (optional)
     :pretty       - pretty print the output (optional)
     :watch        - watch the input paths and stitch the schemas when subschemas are changed (optional)
+    :source-map?  - inject source map to the schema (optional)
   "
-  [& {:keys [input-paths output-path transformers pretty watch]}]
+  [& {:keys [input-paths output-path transformers source-map? pretty watch]}]
   (assert (sequential? input-paths))
 
-  (let [subschemas  (stitch/read-subschemas input-paths {:transformers transformers})
+  (let [subschemas  (stitch/read-subschemas input-paths {:transformers transformers
+                                                         :source-map?  source-map?})
         _           (when-not (seq subschemas)
                       (throw (ex-info "No subschemas found" {})))
         superschema (reduce stitch/stitch-subschemas subschemas)]
@@ -48,7 +50,8 @@
                                :dirs         input-paths
                                :output-file  output-file
                                :pretty       pretty
-                               :transformers transformers})
+                               :transformers transformers
+                               :source-map?  source-map?})
           (spit output-file (with-out-str (stitch/print-schema superschema :pretty pretty)))))
       (:contents superschema))))
 
@@ -103,10 +106,13 @@
   args:
     :input-path - path to read the schema"
   [& {:keys [input-path]}]
-  (let [schema (stitch/read-edn (io/file input-path))]
-    (doseq [t (validators/unreachable-types schema)]
-      (pcompose [:red "Unreachable type"] " " (name t)))
-    (doseq [f (validators/unreachable-input-types schema)]
-      (pcompose [:red "Unreachable input"] " " (name f)))
-    (doseq [i (validators/unreachable-interfaces schema)]
-      (pcompose [:red "Unreachable interface"] " " (name i)))))
+  (let [schema    (stitch/read-edn (io/file input-path))
+        print-loc (fn [loc]
+                    (when loc
+                      [:blue " " (:path loc) ":" (:row loc) ":" (:col loc)]))]
+    (doseq [[t loc] (validators/unreachable-types schema)]
+      (pcompose [:red "Unreachable type"] " " (name t) (print-loc loc)))
+    (doseq [[f loc] (validators/unreachable-input-types schema)]
+      (pcompose [:red "Unreachable input"] " " (name f) (print-loc loc)))
+    (doseq [[i loc] (validators/unreachable-interfaces schema)]
+      (pcompose [:red "Unreachable interface"] " " (name i) (print-loc loc)))))
