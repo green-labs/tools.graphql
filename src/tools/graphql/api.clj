@@ -81,13 +81,13 @@
         (write-sdl w schema))
       (write-sdl *out* schema))))
 
-(defn- scan-vars
+(defn scan-vars
   [path]
-  (let [vs (atom [])]
+  (let [vs (transient [])]
     (with-open [r (io/reader path)]
-      (edn/read {:readers {'var #(swap! vs conj %)}}
+      (edn/read {:readers {'var #(conj! vs %)}}
                 (PushbackReader. r))
-      @vs)))
+      (persistent! vs))))
 
 (defn scan-namespaces
   "Scan all namespaces in the given edn file.
