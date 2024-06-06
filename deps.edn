@@ -3,6 +3,7 @@
            com.kohlschutter.junixsocket/junixsocket-common        {:mvn/version "2.9.1"}
            com.kohlschutter.junixsocket/junixsocket-native-common {:mvn/version "2.9.1"}
            fipp/fipp                                              {:mvn/version "0.6.26"}
+           metosin/malli                                          {:mvn/version "0.16.1"}
            meander/epsilon                                        {:mvn/version "0.0.650"}
            org.clj-commons/pretty                                 {:mvn/version "2.6.0"}
            org.clojure/data.json                                  {:mvn/version "2.5.0"}
