@@ -92,55 +92,88 @@
             {(m/or :queries :mutations) {?qm {:resolve (m/and nil ?resolver)}}}
             ?qm))
 
-(defn connection-query? [schema]
+(defn- connection-query? [schema]
   (let [queries     (m/search schema
-                              {:queries {?query {:type ?type}}}
-                              [?query ?type])
-        connection? (fn [[_ type]]
+                              {:queries {?query {:type ?type
+                                                 :args ?args}}}
+                              {:query ?query, :type ?type, :args ?args})
+        connection? (fn [{:keys [type]}]
                       (when-let [type (m/match type
                                                (non-null (m/pred keyword ?type)) ?type
                                                (m/pred keyword? ?type) ?type
                                                _ nil)]
                         (str/ends-with? (name type) "Connection")))]
     (->> queries
-         (filter connection?)
-         #_(map first))))
+         (filter connection?))))
 
-(connection-query? schema)
+(defn pagination-direction
+  "Determine the direction of pagination based on the argument declaration.
+  Returns :forward, :backward, :bidirectional or nil (when no matching spec)"
+  [args]
+  (m/match args
+           {:first  {:type 'Int}
+            :after  {:type 'String}
+            :last   {:type 'Int}
+            :before {:type 'String}}
+           #_=> :bidirectional
 
+           {:first {:type (m/or Int '(non-null Int))}
+            :after {:type 'String}}
+           #_=> :forward
+
+           {:last   {:type (m/or Int '(non-null Int))}
+            :before {:type 'String}}
+           #_=> :backward
+
+           _ nil))
+
+(defn guess-connection-direction [args]
+  (m/match args
+           {:first  (some? ?first)
+            :after  (some? ?after)
+            :last   (some? ?last)
+            :before (some? ?before)}
+           #_=> [:bidirectional ?first ?after ?last ?before]
+
+           {:first {:type ?first}
+            :after {:type ?after}}
+           #_=> [:forward ?first ?after]
+
+           {:last   {:type ?last}
+            :before {:type ?before}}
+           #_=> [:backward ?last ?before]
+
+           _ nil))
+
+(defn relay-arguments [schema]
+  (->> (connection-query? schema)
+       (remove (fn [{:keys [args]}] (pagination-direction args)))
+       (map (fn [{:keys [args] :as m}]
+              (let [[dir] (guess-connection-direction args)
+                    hint (case dir
+                           :forward "Forward pagination arguments must be {:first Int, :after String}"
+                           :backward "Backward pagination arguments must be {:last Int, :before String}"
+                           :bidirectional "Bidirectional pagination arguments must be {:first Int, :after String, :last Int, :before String}"
+                           "A field that returns a Connection Type must include forward pagination arguments, backward pagination arguments, or both.")]
+                (assoc m :hint hint))))))
+
+(guess-connection-direction {:first          {:type '(non-null Int)},
+                             :after          {:type 'ID},
+                             :orderBy        {:type :CommunityPostCommentOrderBy, :default-value :CREATED_AT},
+                             :orderDirection {:type :OrderDirection, :default-value :DESC}})
 (comment
 
   (require '[tools.graphql.stitch.core :refer [read-edn]]
            '[clojure.java.io :as io])
   (def schema (read-edn (io/file "../farmmorning-backend/bases/core-api/resources/superschema.edn")))
-  (def schema (read-edn (io/file (io/resource "unreachable.edn"))))
-
-  (->> (unreachable-types schema)
-       (remove #(str/ends-with? (name %) "Connection"))
-       #_(count))
+  (def schema (read-edn (io/resource "unreachable.edn")))
+  (def schema (read-edn (io/resource "pagination.edn")))
 
   (unreachable-types schema)
   (unreachable-input-types schema)
   (unreachable-interfaces schema)
 
   (no-root-resolver schema)
-
-
-  (def schema
-    (read-edn (io/resource "pagination.edn")))
-
-  ;; find queries retuning Connection type
-  (connection-query? schema)
-
-  (m/match '(non-null :PostConnection)
-           (non-null ?type) ?type
-           (m/keyword ?type) ?type)
-  (m/match :PostConnection
-           (non-null ?type) ?type
-           (m/pred keyword? ?type) ?type)
-  (m/match '(non-null (list :PostConnection))
-           (non-null (m/pred keyword ?type)) ?type
-           (m/pred keyword? ?type) ?type
-           _ nil)
+  (relay-arguments schema)
 
   :rcf)

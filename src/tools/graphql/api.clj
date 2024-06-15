@@ -115,4 +115,6 @@
     (doseq [[f loc] (validators/unreachable-input-types schema)]
       (pcompose [:red "Unreachable input"] " " (name f) (print-loc loc)))
     (doseq [[i loc] (validators/unreachable-interfaces schema)]
-      (pcompose [:red "Unreachable interface"] " " (name i) (print-loc loc)))))
+      (pcompose [:red "Unreachable interface"] " " (name i) (print-loc loc)))
+    (doseq [m (validators/relay-arguments schema)]
+      (pcompose [:red "Invalid pagination arguments"] " " (name (:query m)) [:blue " " (:hint m)]))))

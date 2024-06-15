@@ -89,4 +89,24 @@
                             :s {}}}]
       (is (= [:r :s] (v/no-root-resolver schema))))))
 
-(run-tests)
+(deftest pagination-direction-test
+  (testing "forward direction"
+    (is (= :forward (v/pagination-direction '{:first {:type (non-null Int)}
+                                              :after {:type String}
+                                              :order {:type :MarketPriceV3Order, :default-value :RECENT}})))
+    (is (= :forward (v/pagination-direction '{:first {:type Int}
+                                              :after {:type String}}))))
+
+  (testing "backward direction"
+    (is (= :backward (v/pagination-direction '{:last   {:type (non-null Int)}
+                                               :before {:type String}}))))
+
+  (testing "bidirectional direction"
+    (is (= :bidirectional (v/pagination-direction '{:first  {:type Int}
+                                                    :after  {:type String}
+                                                    :last   {:type Int}
+                                                    :before {:type String}})))))
+
+(comment
+  (pagination-direction-test)
+  (run-tests))
