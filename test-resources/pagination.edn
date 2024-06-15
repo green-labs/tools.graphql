@@ -1,0 +1,16 @@
+{:objects   {:PostConnection {:fields {:edges    {:type        (non-null (list (non-null PostEdge)))
+                                                  :description "Edges"}
+                                       :pageInfo {:type        (non-null PageInfo)
+                                                  :description "Page information"}
+                                       :count    {:type        (non-null Int)
+                                                  :description "Number of edges"}}}}
+ :queries   {:posts   {:args {:after {:type String}
+                              :first {:type Int}}
+                       :type (non-null :PostConnection)}
+
+             :nposts  {:args {:after {:type String}
+                              :first {:type Int}}
+                       :type :PostConnection}
+
+             :scalarQ {:args {:input {:type (non-null :InputType)}}
+                       :type (non-null :OutputType)}}}

@@ -92,6 +92,22 @@
             {(m/or :queries :mutations) {?qm {:resolve (m/and nil ?resolver)}}}
             ?qm))
 
+(defn connection-query? [schema]
+  (let [queries     (m/search schema
+                              {:queries {?query {:type ?type}}}
+                              [?query ?type])
+        connection? (fn [[_ type]]
+                      (when-let [type (m/match type
+                                               (non-null (m/pred keyword ?type)) ?type
+                                               (m/pred keyword? ?type) ?type
+                                               _ nil)]
+                        (str/ends-with? (name type) "Connection")))]
+    (->> queries
+         (filter connection?)
+         #_(map first))))
+
+(connection-query? schema)
+
 (comment
 
   (require '[tools.graphql.stitch.core :refer [read-edn]]
@@ -108,5 +124,23 @@
   (unreachable-interfaces schema)
 
   (no-root-resolver schema)
+
+
+  (def schema
+    (read-edn (io/resource "pagination.edn")))
+
+  ;; find queries retuning Connection type
+  (connection-query? schema)
+
+  (m/match '(non-null :PostConnection)
+           (non-null ?type) ?type
+           (m/keyword ?type) ?type)
+  (m/match :PostConnection
+           (non-null ?type) ?type
+           (m/pred keyword? ?type) ?type)
+  (m/match '(non-null (list :PostConnection))
+           (non-null (m/pred keyword ?type)) ?type
+           (m/pred keyword? ?type) ?type
+           _ nil)
 
   :rcf)
