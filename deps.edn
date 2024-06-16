@@ -11,8 +11,11 @@
  :tools/usage
  {:ns-default tools.graphql.api}
 
- :aliases {:cli  {:extra-deps {org.clojure/tools.cli {:mvn/version "1.1.230"}}}
-           :test {:extra-paths ["test" "test-resources"]
-                  :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
-                                                                      :git/sha "dfb30dd"}}
-                  :exec-fn     cognitect.test-runner.api/test}}}
+ :aliases {:cli   {:extra-deps {org.clojure/tools.cli {:mvn/version "1.1.230"}}}
+           :build {:deps       {io.github.clojure/tools.build {:mvn/version "RELEASE"}
+                                slipset/deps-deploy           {:mvn/version "RELEASE"}}
+                   :ns-default build}
+           :test  {:extra-paths ["test" "test-resources"]
+                   :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                                       :git/sha "dfb30dd"}}
+                   :exec-fn     cognitect.test-runner.api/test}}}
