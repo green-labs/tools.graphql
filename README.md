@@ -1,6 +1,8 @@
 
 # tools.graphql
 
+[![Clojars Project](https://img.shields.io/clojars/v/org.clojars.greenlabs/tools.graphql.svg)](https://clojars.org/org.clojars.greenlabs/tools.graphql)
+
 This library provides various tools related to GraphQL.
 
 1. [Convert EDN Schema to SDL](#convert-edn-schema-to-sdl)
