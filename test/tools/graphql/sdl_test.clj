@@ -11,35 +11,35 @@
       (edn/read-string)))
 
 (defn diff-edn-sdl [filename]
-  (diff (str/join "\n" (edn->sdl (read-edn (str filename ".edn"))))
-        (slurp (io/resource (str filename ".graphql")))))
+  (diff (str/join "\n" (edn->sdl (read-edn (str "sdl/" filename ".edn"))))
+        (slurp (io/resource (str "sdl/" filename ".graphql")))))
 
 (deftest edn->sdl-test
   (let [test-conversion (fn [filename]
                           (let [[a b _] (diff-edn-sdl filename)]
-                            (= a b nil)))]
-    (is (test-conversion "enum"))
-    (is (test-conversion "interface"))
-    (is (test-conversion "object"))
-    (is (test-conversion "query"))
-    (is (test-conversion "mutation"))
-    (is (test-conversion "union"))
-    (is (test-conversion "input-object"))
-    (is (test-conversion "scalar"))))
+                            (is (= a b nil))))]
+    (test-conversion "enum")
+    (test-conversion "interface")
+    (test-conversion "object")
+    (test-conversion "query")
+    (test-conversion "mutation")
+    (test-conversion "union")
+    (test-conversion "input-object")
+    (test-conversion "scalar")))
 
-(def sample (merge (read-edn "enum.edn")
-                   (read-edn "interface.edn")
-                   (read-edn "object.edn")
-                   (read-edn "query.edn")
-                   (read-edn "mutation.edn")
-                   (read-edn "union.edn")
-                   (read-edn "input-object.edn")
-                   (read-edn "scalar.edn")))
+(def sample (merge (read-edn "sdl/enum.edn")
+                   (read-edn "sdl/interface.edn")
+                   (read-edn "sdl/object.edn")
+                   (read-edn "sdl/query.edn")
+                   (read-edn "sdl/mutation.edn")
+                   (read-edn "sdl/union.edn")
+                   (read-edn "sdl/input-object.edn")
+                   (read-edn "sdl/scalar.edn")))
 
 (deftest query
   (let [test-conversion (fn [q filename {:keys [fields-map]
                                          :or   {fields-map nil}}]
-                          (= (slurp (io/resource (str filename ".graphql")))
+                          (= (slurp (io/resource (str "sdl/" filename ".graphql")))
                              (->query sample q {:max-depth  4
                                                 :fields-map fields-map})))]
     (is (test-conversion :occupations "query1" nil))
@@ -54,12 +54,21 @@
 
 (deftest mutation
   (let [test-conversion (fn [q filename]
-                          (= (slurp (io/resource (str filename ".graphql")))
+                          (= (slurp (io/resource (str "sdl/" filename ".graphql")))
                              (->mutation sample q)))]
     (is (test-conversion :setOccupation "mutation1") "union 내부에 field resolver 인자가 있는 경우")))
 
 (comment
   (run-tests)
+
+  (mutation)
+
+  (def edn (read-edn (str "sdl/input-object-one-of.edn")))
+
+  (println (str/join "\n" (edn->sdl edn)))
+
+  (edn->sdl (read-edn (str "sdl/input-object-one-of.edn")))
+  (diff-edn-sdl "input-object-one-of")
 
   (println (str/join "\n" (edn->sdl sample)))
   (println (sdl/->query sample :node))
