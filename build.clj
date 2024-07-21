@@ -56,6 +56,14 @@
     (println "Building" (:jar-file j-opts) "...")
     (b/jar j-opts)))
 
+(defn uberjar [opts]
+  (let [j-opts (jar-opts opts)]
+    (clean nil)
+    (b/copy-dir {:src-dirs ["src"] :target-dir class-dir})
+    (b/compile-clj j-opts)
+    (b/uber (merge j-opts {:uber-file (:jar-file j-opts)
+                           :main      'tools.graphql.main}))))
+
 (defn deploy
   "Build the jar and deploy it to Clojars. Expects env vars CLOJARS_USERNAME &
   CLOJARS_PASSWORD."
