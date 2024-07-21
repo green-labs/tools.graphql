@@ -62,7 +62,7 @@
     (b/copy-dir {:src-dirs ["src"] :target-dir class-dir})
     (b/compile-clj j-opts)
     (b/uber (merge j-opts {:uber-file (:jar-file j-opts)
-                           :main      'tools.graphql.main}))))
+                           :main      'tools.graphql.cli}))))
 
 (defn deploy
   "Build the jar and deploy it to Clojars. Expects env vars CLOJARS_USERNAME &
