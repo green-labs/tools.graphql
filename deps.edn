@@ -12,7 +12,6 @@
  {:ns-default tools.graphql.api}
 
  :aliases {:cli   {:extra-deps {org.clojure/clojure                  {:mvn/version "1.11.3"}
-                                org.clojure/tools.cli                {:mvn/version "1.1.230"}
                                 clj-matic/cli-matic                  {:git/url "https://github.com/l3nz/cli-matic.git"
                                                                       :git/sha "ddbcad077ba63e0abb3597a7ec6f62c40f91c9e5"}
                                 com.github.clj-easy/graal-build-time {:mvn/version "1.0.5"}}

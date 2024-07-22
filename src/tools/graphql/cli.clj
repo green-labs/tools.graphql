@@ -1,7 +1,7 @@
 (ns tools.graphql.cli
-  (:require [clojure.tools.cli :refer [parse-opts]]
-            [cli-matic.core :refer [run-cmd]]
-            [tools.graphql.api :as api])
+  (:require [cli-matic.core :refer [run-cmd]]
+            [tools.graphql.api :as api]
+            [tools.graphql.transformers :as transformers])
   (:gen-class))
 
 (defn foo [& args]
@@ -46,11 +46,13 @@
                                  :as      ":source-map?"
                                  :type    :flag}]
                   :runs        (fn [{:keys [path out pretty watch source-map]}]
-                                 (api/stitch-schemas {:input-paths path
-                                                      :output-path out
-                                                      :pretty      pretty
-                                                      :watch       watch
-                                                      :source-map? source-map}))}
+                                 (api/stitch-schemas {:input-paths  path
+                                                      :output-path  out
+                                                      :pretty       pretty
+                                                      :watch        watch
+                                                      :source-map?  source-map
+                                                      :transformers [transformers/transform-type-sugar
+                                                                     transformers/relay-pagination]}))}
                  {:command     "validate"
                   :description "Validate the edn GraphQL schema."
                   :opts        [{:option  "src"
@@ -62,10 +64,4 @@
 
 
 (defn -main [& args]
-  (run-cmd args CONFIGURATION)
-  #_(prn (parse-opts args cli-options))
-  #_(api/stitch-schemas {:input-paths ["test-resources/subschemas"]
-                         :pretty      true
-                         :watch       true}))
-
-;(parse-opts ["stitch-schemas"] cli-options)
+  (run-cmd args CONFIGURATION))

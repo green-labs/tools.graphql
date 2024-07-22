@@ -56,13 +56,23 @@
     (println "Building" (:jar-file j-opts) "...")
     (b/jar j-opts)))
 
-(defn uberjar [opts]
-  (let [j-opts (jar-opts opts)]
+(defn uberjar
+  [opts]
+  (let [j-opts (assoc opts
+                 :lib lib   :version version
+                 :jar-file  (format "target/%s-cli-%s.jar" lib version)
+                 :basis     (b/create-basis {:aliases [:cli]})
+                 :class-dir class-dir
+                 :target    "target"
+                 :src-dirs  ["src"])]
     (clean nil)
     (b/copy-dir {:src-dirs ["src"] :target-dir class-dir})
     (b/compile-clj j-opts)
     (b/uber (merge j-opts {:uber-file (:jar-file j-opts)
                            :main      'tools.graphql.cli}))))
+
+;; clj -T:build uberjar
+;; native-image -jar target/org.clojars.greenlabs/tools.graphql-cli-1.0.47.jar --no-fallback --features=clj_easy.graal_build_time.InitClojureClasses tg
 
 (defn deploy
   "Build the jar and deploy it to Clojars. Expects env vars CLOJARS_USERNAME &
