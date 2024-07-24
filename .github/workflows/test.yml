@@ -19,6 +19,5 @@ jobs:
         with:
           cli: 1.11.3.1463
 
-      - name: Run libs/case-format tests
-        working-directory: libs/case-format
+      - name: Run tests
         run: clojure -X:test
