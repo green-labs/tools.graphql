@@ -49,7 +49,7 @@
                       path-to-root
                       "tools.graphql.stitch.watch"
                       {:expression ["allof"
-                                    ["dirname" (first dirs)]
+                                    (into ["anyof"] (mapv (fn [dir] ["dirname" dir]) dirs))
                                     ["suffix" "edn"]]}
                       (create-watcher opts)))
 

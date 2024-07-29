@@ -17,12 +17,6 @@ You can install this library using the Clojure CLI tool.
 clojure -Ttools install-latest :lib io.github.green-labs/tools.graphql :as graphql
 ```
 
-If you want to add it to your build system, add the following to the `:build` (or appropriate alias):
-
-```edn
-{io.github.clojure/tools.build {:mvn/version "0.10.3"}}
-```
-
 ### Convert EDN Schema to SDL
 
 When using the Lacinia library, you need to write the schema in EDN format. If you want to convert it to GraphQL SDL format, you can use the `edn2sdl` API.
