@@ -74,6 +74,25 @@
                                :Dummy   {:fields {:id {:type 'String}}}}}]
       (is (= [[:UnusedIf nil]] (v/unreachable-interfaces schema))))))
 
+(deftest interface-with-resolver-test
+  (testing "interface should not have any resolvers to its fields"
+    (let [schema {:interfaces {:Node {:fields {:id {:type        '(non-null ID)
+                                                    :description "The id of the object"}}}
+                               :Post {:implements [:Node]
+                                      :fields     {:id     {:type        '(non-null ID)
+                                                            :description "The id of the object"}
+                                                   :title  {:type        '(non-null String)
+                                                            :description "The title of the post"
+                                                            :resolver    (fn [_ _ _] nil)}
+                                                   :author {:type        '(non-null User)
+                                                            :description "The author of the post"}}}}}
+          result (v/interface-with-resolver schema)]
+      (is (= (count result) 1))
+      (is (let [[ifc _ field resolver] (first result)]
+            (and (= ifc :Post)
+                 (= field :title)
+                 (some? resolver)))))))
+
 (deftest no-root-resolver
   (testing "query or mutation without resolver"
     (let [schema {:queries   {:user {:type :User}}

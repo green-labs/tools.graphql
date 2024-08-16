@@ -157,10 +157,13 @@
                            "A field that returns a Connection Type must include forward pagination arguments, backward pagination arguments, or both.")]
                 (assoc m :hint hint))))))
 
-(guess-connection-direction {:first          {:type '(non-null Int)},
-                             :after          {:type 'ID},
-                             :orderBy        {:type :CommunityPostCommentOrderBy, :default-value :CREATED_AT},
-                             :orderDirection {:type :OrderDirection, :default-value :DESC}})
+(defn interface-with-resolver
+  [schema]
+  (sort (m/search schema
+                  {:interfaces {?ifc {:loc    ?loc
+                                      :fields {?field {:resolver (m/some ?resolver)}}}}}
+                  [?ifc ?loc ?field ?resolver])))
+
 (comment
 
   (require '[tools.graphql.stitch.core :refer [read-edn]]
@@ -175,5 +178,10 @@
 
   (no-root-resolver schema)
   (relay-arguments schema)
+
+  (guess-connection-direction {:first          {:type '(non-null Int)},
+                               :after          {:type 'ID},
+                               :orderBy        {:type :CommunityPostCommentOrderBy, :default-value :CREATED_AT},
+                               :orderDirection {:type :OrderDirection, :default-value :DESC}})
 
   :rcf)
