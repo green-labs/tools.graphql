@@ -83,7 +83,7 @@
                                                             :description "The id of the object"}
                                                    :title  {:type        '(non-null String)
                                                             :description "The title of the post"
-                                                            :resolver    (fn [_ _ _] nil)}
+                                                            :resolve     (fn [_ _ _] nil)}
                                                    :author {:type        '(non-null User)
                                                             :description "The author of the post"}}}}}
           result (v/interface-with-resolver schema)]

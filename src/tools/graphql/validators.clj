@@ -160,21 +160,27 @@
 (defn interface-with-resolver
   [schema]
   (sort (m/search schema
-                  {:interfaces {?ifc {:loc    ?loc
-                                      :fields {?field {:resolver (m/some ?resolver)}}}}}
+                  {:interfaces {?ifc {:fields {?field {:resolve (m/some ?resolver)
+                                                       :loc     ?loc}}}}}
                   [?ifc ?loc ?field ?resolver])))
 
 (comment
 
   (require '[tools.graphql.stitch.core :refer [read-edn]]
            '[clojure.java.io :as io])
-  (def schema (read-edn (io/file "../farmmorning-backend/bases/core-api/resources/superschema.edn")))
+  @(def schema (read-edn (io/file "../farmmorning-backend/bases/core-api/resources/superschema.edn")))
   (def schema (read-edn (io/resource "unreachable.edn")))
   (def schema (read-edn (io/resource "pagination.edn")))
 
   (unreachable-types schema)
   (unreachable-input-types schema)
   (unreachable-interfaces schema)
+  (interface-with-resolver schema)
+
+  (m/search schema
+            {:interfaces {?ifc {:loc    ?loc
+                                :fields {?field {:resolve ?resolver}}}}}
+            [?ifc ?loc ?field ?resolver])
 
   (no-root-resolver schema)
   (relay-arguments schema)

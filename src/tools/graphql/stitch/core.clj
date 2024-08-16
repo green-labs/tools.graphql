@@ -54,6 +54,7 @@
       (update :objects dissoc :Query :Mutation :Subscription)))
 
 (defn source-map
+  "TODO: only support for 1-level map"
   [path]
   (fn [schema]
     (let [embed-loc #(update-vals % (fn [v]
