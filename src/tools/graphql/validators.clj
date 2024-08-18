@@ -157,23 +157,37 @@
                            "A field that returns a Connection Type must include forward pagination arguments, backward pagination arguments, or both.")]
                 (assoc m :hint hint))))))
 
-(guess-connection-direction {:first          {:type '(non-null Int)},
-                             :after          {:type 'ID},
-                             :orderBy        {:type :CommunityPostCommentOrderBy, :default-value :CREATED_AT},
-                             :orderDirection {:type :OrderDirection, :default-value :DESC}})
+(defn interface-with-resolver
+  [schema]
+  (sort (m/search schema
+                  {:interfaces {?ifc {:fields {?field {:resolve (m/some ?resolver)
+                                                       :loc     ?loc}}}}}
+                  [?ifc ?loc ?field ?resolver])))
+
 (comment
 
   (require '[tools.graphql.stitch.core :refer [read-edn]]
            '[clojure.java.io :as io])
-  (def schema (read-edn (io/file "../farmmorning-backend/bases/core-api/resources/superschema.edn")))
+  @(def schema (read-edn (io/file "../farmmorning-backend/bases/core-api/resources/superschema.edn")))
   (def schema (read-edn (io/resource "unreachable.edn")))
   (def schema (read-edn (io/resource "pagination.edn")))
 
   (unreachable-types schema)
   (unreachable-input-types schema)
   (unreachable-interfaces schema)
+  (interface-with-resolver schema)
+
+  (m/search schema
+            {:interfaces {?ifc {:loc    ?loc
+                                :fields {?field {:resolve ?resolver}}}}}
+            [?ifc ?loc ?field ?resolver])
 
   (no-root-resolver schema)
   (relay-arguments schema)
+
+  (guess-connection-direction {:first          {:type '(non-null Int)},
+                               :after          {:type 'ID},
+                               :orderBy        {:type :CommunityPostCommentOrderBy, :default-value :CREATED_AT},
+                               :orderDirection {:type :OrderDirection, :default-value :DESC}})
 
   :rcf)
