@@ -2,6 +2,7 @@
  :deps    {borkdude/edamame                                       {:mvn/version "1.4.25"}
            com.kohlschutter.junixsocket/junixsocket-common        {:mvn/version "2.10.0"}
            com.kohlschutter.junixsocket/junixsocket-native-common {:mvn/version "2.10.0"}
+           com.stuartsierra/dependency                            {:mvn/version "1.0.0"}
            fipp/fipp                                              {:mvn/version "0.6.26"}
            meander/epsilon                                        {:mvn/version "0.0.650"}
            org.clj-commons/pretty                                 {:mvn/version "3.0.0"}
