@@ -118,5 +118,7 @@
       (pcompose [:red "Unreachable interface"] " " (name i) (print-loc loc)))
     (doseq [[i _loc field] (validators/interface-with-resolver schema)]
       (pcompose [:red "Interface should not have resolvers"] " " (name i) "." (name field)))
+    (doseq [[t loc omitted] (validators/omitted-interfaces schema)]
+      (pcompose [:red "Omitted transitive interfaces"] " " (name t) " " [:yellow (set omitted)] (print-loc loc)))
     (doseq [m (validators/relay-arguments schema)]
       (pcompose [:red "Invalid pagination arguments"] " " (name (:query m)) [:blue " " (:hint m)]))))

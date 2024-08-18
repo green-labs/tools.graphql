@@ -1,6 +1,8 @@
 (ns tools.graphql.validators
-  (:require [clojure.string :as str]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
+            [com.stuartsierra.dependency :as dep]
             [meander.epsilon :as m]))
 
 (defn graphql-type?
@@ -164,30 +166,57 @@
                                                        :loc     ?loc}}}}}
                   [?ifc ?loc ?field ?resolver])))
 
+(defn- update-deps [g node parents]
+  (reduce #(dep/depend %1 node %2) g parents))
+
+(defn- if-dag [schema]
+  (let [ifcs  (m/search schema {:interfaces {?ifc {:implements ?parents}}}
+                        [?ifc ?parents])
+        objs  (m/search schema {:objects {?obj {:implements ?parents}}}
+                        [?obj ?parents])
+        edges (into (into {} ifcs) objs)]
+    (reduce (fn [g [node parents]]
+              (update-deps g node parents)) (dep/graph) edges)))
+
+(defn omitted-interfaces [schema]
+  (let [dag          (if-dag schema)
+        objs         (m/search schema {:objects {?obj {:implements ?parents
+                                                       :loc        ?loc}}}
+                               [?obj ?loc ?parents])
+        obj-loc      (zipmap (map first objs) (map second objs))
+        obj-deps     (zipmap (map first objs) (map last objs))
+        omitted-diff (fn [obj]
+                       (let [actual-deps    (dep/transitive-dependencies dag obj)
+                             described-deps (set (obj-deps obj))]
+                         (set/difference actual-deps described-deps)))]
+    (->> (keys obj-deps)
+         (map (juxt identity obj-loc omitted-diff))
+         (filter (fn [[_ _ omitted]] (seq omitted))))))
+
 (comment
 
   (require '[tools.graphql.stitch.core :refer [read-edn]]
            '[clojure.java.io :as io])
   @(def schema (read-edn (io/file "../farmmorning-backend/bases/core-api/resources/superschema.edn")))
   (def schema (read-edn (io/resource "unreachable.edn")))
-  (def schema (read-edn (io/resource "pagination.edn")))
 
   (unreachable-types schema)
   (unreachable-input-types schema)
   (unreachable-interfaces schema)
   (interface-with-resolver schema)
 
-  (m/search schema
-            {:interfaces {?ifc {:loc    ?loc
-                                :fields {?field {:resolve ?resolver}}}}}
-            [?ifc ?loc ?field ?resolver])
+  (def schema (read-edn (io/resource "nested-interfaces.edn")))
+  (omitted-interfaces schema)
 
   (no-root-resolver schema)
   (relay-arguments schema)
 
+  (def schema (read-edn (io/resource "pagination.edn")))
   (guess-connection-direction {:first          {:type '(non-null Int)},
                                :after          {:type 'ID},
                                :orderBy        {:type :CommunityPostCommentOrderBy, :default-value :CREATED_AT},
                                :orderDirection {:type :OrderDirection, :default-value :DESC}})
+
+  (update-deps (dep/graph) :Post [:Node])
 
   :rcf)
