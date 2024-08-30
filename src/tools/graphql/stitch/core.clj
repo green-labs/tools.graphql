@@ -99,6 +99,8 @@
   [a b]
   (set/intersection (set (keys a)) (set (keys b))))
 
+(def empty-subschema (map->Subschema {:contents {}}))
+
 (defn stitch-subschemas
   "Merge two subschemas into one subschema. If there is a conflict, throw an exception."
   [{a :contents} {b :contents :as subschema-b}]

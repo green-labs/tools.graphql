@@ -1,16 +1,18 @@
 (ns tools.graphql.stitch.watch
   (:require [clojure.java.io :as io]
+            [clojure.tools.logging :as log]
             [tools.graphql.stitch.core :as stitch]
-            [tools.graphql.stitch.watchman :as watchman]))
+            [tools.graphql.stitch.watcher :as watcher]))
 
 (def path->schema (atom {}))
 
 (defn- stitch-all
   [{:keys [output-file pretty]}]
+  {:pre [(some? output-file)]}
   (let [schemas     (vals @path->schema)
         superschema (reduce stitch/stitch-subschemas schemas)]
     (time
-     (spit output-file (with-out-str (stitch/print-schema superschema :pretty pretty))))))
+      (spit output-file (with-out-str (stitch/print-schema superschema :pretty pretty))))))
 
 (defn- prebuild-all
   [dirs opts]
@@ -19,17 +21,20 @@
     (reset! path->schema (zipmap paths schemas))
     (stitch-all opts)))
 
-(defn- create-watcher [opts]
-  (reify watchman/Subscription
+(defn- create-subscriber [opts]
+  (reify watcher/Subscription
     (-created [_ path]
+      (println (format "Created %s" path))
       (assert (not (contains? @path->schema path)) "The schema already exists.")
       (swap! path->schema assoc path (stitch/read-subschema (io/file path) opts))
       (stitch-all opts))
     (-modified [_ path]
+      (println (format "Modified %s" path))
       (assert (contains? @path->schema path) "The schema does not exist.")
       (swap! path->schema assoc path (stitch/read-subschema (io/file path) opts))
       (stitch-all opts))
     (-deleted [_ path]
+      (println (format "Deleted %s" path))
       (assert (contains? @path->schema path) "The schema does not exist.")
       (swap! path->schema dissoc path)
       (stitch-all opts))))
@@ -38,35 +43,23 @@
   "Watch the given directories and stitch the schemas when the files are created, modified, or deleted.
 
   watch-opts:
-    :path-to-root - the root path to watch
-    :dirs - the directories to watch
-    :output-file - the path to write the superschema
+    :path-to-root - the root path to watch (required)
+    :dirs - the directories to watch (required)
+    :output-file - the path to write the superschema (required)
     :pretty - pretty print the output
     :transformers - a list of functions to transform the schema before stitching"
   [& {:keys [path-to-root dirs] :as opts}]
+  ;; check if path-to-root is a directory
+  (assert (.isDirectory (io/file path-to-root)) "The path-to-root does not exist.")
   (prebuild-all dirs opts)
-  (watchman/subscribe (watchman/create-watchman-client)
+  (prn "watching" dirs)
+  #_(watcher/watchman (watcher/create-watchman-client)
                       path-to-root
                       "tools.graphql.stitch.watch"
                       {:expression ["allof"
                                     (into ["anyof"] (mapv (fn [dir] ["dirname" dir]) dirs))
                                     ["suffix" "edn"]]}
-                      (create-watcher opts)))
-
-
-(comment
-
-  (def dirs ["../../bases/core-api/resources/schema/review"])
-  (def opts {:transformers []})
-  (def watcher (create-watcher opts))
-
-  (watch {:path-to-root "/Users/namenu/green/farmmorning-clj"
-          :dirs         ["bases/core-api/resources/schema"]})
-
-  (watchman/-created watcher "../../bases/core-api/resources/schema/user.edn")
-  (watchman/-modified watcher "../../bases/core-api/resources/schema/user.edn")
-  (watchman/-deleted watcher "../../bases/core-api/resources/schema/user.edn")
-
-  (count @path->schema)
-
-  :rcf)
+                      (create-subscriber opts))
+  (watcher/subscribe dirs
+                     path-to-root
+                     (create-subscriber opts)))

@@ -1,7 +1,8 @@
 {:paths   ["src"]
- :deps    {borkdude/edamame                                       {:mvn/version "1.4.25"}
-           com.kohlschutter.junixsocket/junixsocket-common        {:mvn/version "2.10.0"}
-           com.kohlschutter.junixsocket/junixsocket-native-common {:mvn/version "2.10.0"}
+ :deps    {borkdude/edamame                                       {:mvn/version "1.4.26"}
+           com.kohlschutter.junixsocket/junixsocket-common        {:mvn/version "2.9.1"}
+           com.kohlschutter.junixsocket/junixsocket-native-common {:mvn/version "2.9.1"}
+           com.nextjournal/beholder                               {:mvn/version "1.0.2"}
            com.stuartsierra/dependency                            {:mvn/version "1.0.0"}
            fipp/fipp                                              {:mvn/version "0.6.26"}
            meander/epsilon                                        {:mvn/version "0.0.650"}
