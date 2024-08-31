@@ -1,6 +1,5 @@
 (ns tools.graphql.stitch.watch
   (:require [clojure.java.io :as io]
-            [clojure.tools.logging :as log]
             [tools.graphql.stitch.core :as stitch]
             [tools.graphql.stitch.watcher :as watcher]))
 
@@ -52,14 +51,7 @@
   ;; check if path-to-root is a directory
   (assert (.isDirectory (io/file path-to-root)) "The path-to-root does not exist.")
   (prebuild-all dirs opts)
-  (prn "watching" dirs)
-  #_(watcher/watchman (watcher/create-watchman-client)
-                      path-to-root
-                      "tools.graphql.stitch.watch"
-                      {:expression ["allof"
-                                    (into ["anyof"] (mapv (fn [dir] ["dirname" dir]) dirs))
-                                    ["suffix" "edn"]]}
-                      (create-subscriber opts))
+  (println "Watching" dirs)
   (watcher/subscribe dirs
                      path-to-root
                      (create-subscriber opts)))
