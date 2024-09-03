@@ -319,46 +319,37 @@
   [_schema _field-def _opts])
 
 (defn extract-field-args
-  "재귀적으로 `max-depth`까지 필드의 인자를 모두 찾아서 반환"
+  "재귀적으로 max-depth까지 필드의 인자를 모두 찾아서 반환"
   ([schema type]
    (extract-field-args schema type {:max-depth 3}))
   ([schema type {:keys [depth max-depth fields-map]
                  :or   {depth 0}
                  :as   opts}]
-   (let [return-only-type (inner-type type)
-         next-opts        (assoc opts :depth (inc depth))]
+   (cond
+     (< max-depth depth) []
 
-     ;; 종료 조건: 현재 depth가 max-depth를 초과하면 빈 리스트 반환
-     (when-not (> depth max-depth)
-       (cond
-         ;; Union 타입 처리: union 멤버들에 대해 재귀적으로 필드 인자 추출
-         (get-in schema [:unions return-only-type])
-         (mapcat #(extract-field-args schema % next-opts)
-                 (get-in schema [:unions return-only-type :members]))
+     (get-in schema [:unions type])
+     (->> (get-in schema [:unions type :members])
+          (mapcat (fn [type] (extract-field-args schema (inner-type type) opts))))
 
-         ;; Interface 타입 처리: 구현된 타입들에 대해 재귀적으로 필드 인자 추출
-         (get-in schema [:interfaces return-only-type])
-         (mapcat #(extract-field-args schema % next-opts)
-                 (implementation-types schema return-only-type))
+     (get-in schema [:interfaces type])
+     (->> (implementation-types schema type)
+          (mapcat (fn [type] (extract-field-args schema (inner-type type) opts))))
 
-         ;; Object 타입 처리
-         (get-object schema return-only-type)
-         (let [fields          (get-in (get-object schema return-only-type) [:fields] {})
-               selected-fields (if (seq fields-map)
-                                 (select-keys fields (keys fields-map))
-                                 fields)]
-           (mapcat (fn [[field-name {:keys [type args]}]]
-                     (let [sub-field-map (get fields-map field-name)
-                           sub-results   (extract-field-args schema type
-                                                             (assoc next-opts :fields-map sub-field-map))]
-                       (concat
-                        sub-results
-                        (when (and args (< depth max-depth))
-                          (args->query-args args (name field-name))))))
-                   selected-fields))
-
-         ;; 기본 케이스: 처리할 것이 없으면 빈 리스트 반환
-         :else [])))))
+     :else
+     (let [fields (get (get-object schema type) :fields {})]
+       (->> (if-let [select-fields (keys fields-map)]
+              (select-keys fields select-fields)
+              fields)
+            (mapcat (fn [[field-name {:keys [type args]}]]
+                      (let [type (inner-type type)]
+                        (concat
+                         (when (or (get-object schema type) (get-in schema [:interfaces type]))
+                           (extract-field-args schema type (assoc opts
+                                                                  :depth (inc depth)
+                                                                  :fields-map (field-name fields-map))))
+                         (when (and args (<= depth max-depth))
+                           (args->query-args args (name field-name))))))))))))
 
 (defn- query&mutation->query
   [schema query-type query-name {:keys [args type]} {:keys [max-depth fields-map]
