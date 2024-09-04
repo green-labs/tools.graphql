@@ -1,10 +1,8 @@
-(ns tools.graphql.sdl-test
-  (:require [clojure.data :refer [diff]]
-            [clojure.edn :as edn]
+(ns tools.graphql.inspect-test
+  (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as str]
             [clojure.test :refer :all]
-            [tools.graphql.inspect :refer [->query ->mutation]]))
+            [tools.graphql.inspect :refer [->mutation ->query ->query-interface]]))
 
 (defn read-edn [path]
   (-> (slurp (io/resource path))
@@ -46,6 +44,8 @@
 
   (mutation)
 
-  (println (sdl/->query sample :node))
-  (println (sdl/->query sample :nested {:fields-map {:nested {:b {:c nil}}}}))
-  (println (sdl/->mutation sample :setOccupation)))
+  (println (->query-interface sample {:query-name :node :impl-types [:User]}))
+
+  (println (->query sample :node))
+  (println (->query sample :nested {:fields-map {:nested {:b {:c nil}}}}))
+  (println (->mutation sample :setOccupation)))

@@ -53,22 +53,22 @@
                      object-name)))))))
 
 (defmulti select-field
-          "쿼리에서 선택하는 필드의 종류에 따른 필드 쿼리 문자열 생성
-           Arguments
-            - schema: lacinia 스키마 edn
-            - field-def: 필드 정의 (objects에서 조회된 값. )
-              - [field-name {:keys [type args fields]}]]
-            - opts: option map
-              - max-depth: 쿼리문을 생성할 최대 깊이
-              - fields-map: 조회할 필드들을 map으로 조회합니다. (object type 만 지원)"
-          (fn [schema field-def opts]
-            (let [type (field-def->type field-def)]
-              (cond
-                (> (:depth opts) (:max-depth opts)) :max-depth
-                (get-in schema [:unions type]) :union
-                (get-in schema [:interfaces type]) :interface
-                (or (get-in schema [:objects (keyword type)])
-                    (get-in schema [:objects (name type)])) :object))))
+  "쿼리에서 선택하는 필드의 종류에 따른 필드 쿼리 문자열 생성
+   Arguments
+    - schema: lacinia 스키마 edn
+    - field-def: 필드 정의 (objects에서 조회된 값. )
+      - [field-name {:keys [type args fields]}]]
+    - opts: option map
+      - max-depth: 쿼리문을 생성할 최대 깊이
+      - fields-map: 조회할 필드들을 map으로 조회합니다. (object type 만 지원)"
+  (fn [schema field-def opts]
+    (let [type (field-def->type field-def)]
+      (cond
+        (> (:depth opts) (:max-depth opts)) :max-depth
+        (get-in schema [:unions type]) :union
+        (get-in schema [:interfaces type]) :interface
+        (or (get-in schema [:objects (keyword type)])
+            (get-in schema [:objects (name type)])) :object))))
 
 (defmethod select-field :union
   [schema field-def opts]
@@ -210,9 +210,10 @@
   [schema
    {:keys [query-name
            impl-types]}
-   {:keys [max-depth]
-    :or   {max-depth 3}
-    :as   opts}]
+   & {:keys [max-depth]
+      :or   {max-depth 3}
+      :as   opts}]
+  (prn opts)
   (when-let [{:keys [args type]}  (get-in schema [:queries query-name])]
     (let [query-args (args->query-args args)
           field-def  (type->field-def schema type)
