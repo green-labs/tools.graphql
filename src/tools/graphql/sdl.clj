@@ -319,7 +319,7 @@
   [_schema _field-def _opts])
 
 (defn extract-field-args
-  "재귀적으로 max-depth까지 필드의 인자를 모두 찾아서 반환"
+  "재귀적으로 `max-depth`까지 필드의 인자를 모두 찾아서 반환"
   ([schema type]
    (extract-field-args schema type {:max-depth 3}))
   ([schema type {:keys [depth max-depth fields-map]
