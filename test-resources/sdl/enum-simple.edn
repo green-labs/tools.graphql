@@ -1,0 +1,3 @@
+{:enums {:OrderDirection {:description "Order Direction"
+                          :values      [:ASC :DESC]}
+         :Role           {:values [:USER :MANAGER :ADMIN]}}}

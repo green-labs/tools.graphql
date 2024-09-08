@@ -19,6 +19,7 @@
                           (let [[a b _] (diff-edn-sdl filename)]
                             (is (= a b nil))))]
     (test-conversion "enum")
+    (test-conversion "enum-simple")
     (test-conversion "interface")
     (test-conversion "object")
     (test-conversion "query")
@@ -28,5 +29,4 @@
     (test-conversion "scalar")))
 
 (comment
-  (run-tests)
-  )
+  (run-tests))

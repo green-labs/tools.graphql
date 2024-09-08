@@ -105,12 +105,14 @@
          (str (->doc description)
               "enum " (name k) " {\n"
               (->> values
-                   (map (fn [{:keys [description deprecated enum-value]}]
-                          (str
-                           (->doc description "  ")
-                           "  "
-                           (name enum-value)
-                           (when deprecated (str " " (->deprecated deprecated))))))
+                   (map (fn [{:keys [description deprecated enum-value] :as value}]
+                          (if (keyword? value)
+                            (str "  " (name value))
+                            (str
+                             (->doc description "  ")
+                             "  "
+                             (name enum-value)
+                             (when deprecated (str " " (->deprecated deprecated)))))))
                    (s/join "\n"))
               "\n}\n"))
        (vec m)))
