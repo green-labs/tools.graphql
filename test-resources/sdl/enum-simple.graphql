@@ -1,0 +1,13 @@
+"""
+Order Direction
+"""
+enum OrderDirection {
+  ASC
+  DESC
+}
+
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
