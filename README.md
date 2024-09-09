@@ -43,9 +43,9 @@ clojure -Tgraphql stitch-schemas \
 
 The `stitch-schemas` function will only generate the final schema if it can merge the schemas reliably.
 
-If you frequently need to merge schemas during development, you can add the `:watch true` parameter to enable the watch feature. To use watch, Watchman must be installed on your system.
+If you frequently need to merge schemas during development, you can add the `:watch true` parameter to enable the watch feature.
 
-Note: It is recommended to commit the stitched schema alongside with subschemas.
+Note: It is recommended to version control the stitched schema alongside with subschemas.
 
 ### Schema Static Analysis
 

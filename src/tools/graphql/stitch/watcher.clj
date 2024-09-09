@@ -1,5 +1,4 @@
 (ns tools.graphql.stitch.watcher
-  "Minimal watchman client for Clojure. Only supports subscribe."
   (:require [clojure.string :as str]
             [nextjournal.beholder :as beholder])
   (:import (java.nio.file Path Paths)))
