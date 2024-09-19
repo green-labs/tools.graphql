@@ -32,12 +32,19 @@
                   :mutations {:createUser {:type :User}
                               :updateUser {:type :User}
                               :deleteUser {:type :User}}}]
-      (is (= [[:Dummy nil]] (v/unreachable-types schema)))))
+      (is (= [[:Dummy nil nil]] (v/unreachable-types schema)))))
 
   (testing "object referenced in union"
     (let [schema {:objects {:UnionMember {:fields {:id {:type 'String}}}}
                   :unions  {:TheUnion {:members [:Pre1 :Pre2 :UnionMember :Post1 :Post2]}}}]
-      (is (= [[:TheUnion nil]] (v/unreachable-types schema))))))
+      (is (= [[:TheUnion nil nil]] (v/unreachable-types schema)))))
+
+  (testing "ignoring option"
+    (let [schema {:objects {:User  {:fields {:id {:type 'String}}}
+                            :Dummy {:linters {:ignore true}
+                                    :fields  {:id {:type 'String}}}}
+                  :queries {:user {:type :User}}}]
+      (is (= [] (v/unreachable-types schema))))))
 
 (deftest no-unreachable-input-types
   (testing "input-object not referenced in any query or mutation"

@@ -28,36 +28,37 @@
 
 (defn unreachable-types [schema]
   (let [types        (sort (m/search schema
-                                     {(m/or :objects :enums :unions) {?type {:loc ?loc}}}
-                                     [?type ?loc]))
-        unreachable? (fn [[t]]
-                       (nil? (m/find {:schema schema
-                                      :type   t}
-                                     ;; [field type] objects, input-objects and interfaces
-                                     {:schema {(m/or :objects :input-objects :interfaces) {?type {:fields {?field {:type (m/$ ?t)}}}}}
-                                      :type   ?t}
-                                     ?field
+                                     {(m/or :objects :enums :unions) {?type {:loc ?loc
+                                                                             :linters ?opts}}}
+                                     [?type ?loc ?opts]))
+        unreachable? (fn [[t _ opts]]
+                       (and (not (:ignore opts))
+                            (nil? (m/find {:schema schema
+                                           :type   t}
+                                          ;; [field type] objects, input-objects and interfaces
+                                          {:schema {(m/or :objects :input-objects :interfaces) {?type {:fields {?field {:type (m/$ ?t)}}}}}
+                                           :type   ?t}
+                                          ?field
 
-                                     ;; [argument type] objects and interfaces
-                                     {:schema {:objects {?tn {:fields {?fn {:args {?an {:type (m/$ ?t)}}}}}}}
-                                      :type   ?t}
-                                     ?an
+                                          ;; [argument type] objects and interfaces
+                                          {:schema {:objects {?tn {:fields {?fn {:args {?an {:type (m/$ ?t)}}}}}}}
+                                           :type   ?t}
+                                          ?an
 
-                                     ;; [field type] queries and mutations
-                                     {:schema {(m/or :queries :mutations) {?qm {:type (m/$ ?t)}}}
-                                      :type   ?t}
-                                     ?qm
+                                          ;; [field type] queries and mutations
+                                          {:schema {(m/or :queries :mutations) {?qm {:type (m/$ ?t)}}}
+                                           :type   ?t}
+                                          ?qm
 
-                                     ;; [argument type] queries and mutations
-                                     {:schema {(m/or :queries :mutations) {?qm {:args {?input {:type (m/$ ?t)}}}}}
-                                      :type   ?t}
-                                     ?qm
+                                          ;; [argument type] queries and mutations
+                                          {:schema {(m/or :queries :mutations) {?qm {:args {?input {:type (m/$ ?t)}}}}}
+                                           :type   ?t}
+                                          ?qm
 
-                                     ;; unions
-                                     {:schema {:unions {?union {:members (m/$ ?t)}}}
-                                      :type   ?t}
-                                     ?union)))]
-    (log/debug "types:" types)
+                                          ;; unions
+                                          {:schema {:unions {?union {:members (m/$ ?t)}}}
+                                           :type   ?t}
+                                          ?union))))]
     (filter unreachable? types)))
 
 (defn unreachable-input-types [schema]
@@ -195,10 +196,8 @@
 
 (comment
 
-  (require '[tools.graphql.stitch.core :refer [read-edn]]
-           '[clojure.java.io :as io])
-  @(def schema (read-edn (io/file "../farmmorning-backend/bases/core-api/resources/superschema.edn")))
-  (def schema (read-edn (io/resource "unreachable.edn")))
+  (require '[clojure.java.io :as io])
+  @(def schema (read-string (slurp (io/resource "unreachable.edn"))))
 
   (unreachable-types schema)
   (unreachable-input-types schema)

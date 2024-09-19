@@ -13,7 +13,9 @@
                  :Nesting {:fields {:id {:type String}}}
                  :MyNode  {:implements [:Node]
                            :fields     {:id {:type String}}}
-                 :Dummy   {:fields {:id {:type String}}}}
+                 :Dummy   {:fields {:id {:type String}}}
+                 :SafeDummy {:fields {:id {:type String}}
+                             :linters {:ignore true}}}
  :enums         {:Role       {:values [:ADMIN :USER]}
                  :UnusedEnum {:values [:UNUSED]}}
  :input-objects {:UserInput    {:fields {:name     {:type String}

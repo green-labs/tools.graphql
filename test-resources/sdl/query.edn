@@ -9,8 +9,7 @@
            :cardCompanies           {:description "카드사 전체 조회 쿼리"
                                      :deprecated  "deprecated"
                                      :args        {}
-                                     :type        (non-null (list (non-null :CardCompany)))
-                                     :resolve     'farmmorning.core-api.payment.resolver/resolve-card-companies}
+                                     :type        (non-null (list (non-null :CardCompany)))}
 
            ; default args
            :communityPinnedPosts    {:args        {:target {:type          (non-null (list (non-null :CommunityPostPinnedTarget)))
