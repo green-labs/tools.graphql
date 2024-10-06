@@ -5,10 +5,10 @@
   the-guild.dev 에서 stitch 라고 부르는 개념입니다.
   https://the-guild.dev/graphql/stitching
   "
-  (:require [clojure.edn :as edn]
+  (:require [clj-commons.ansi :refer [perr]]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.set :as set]
-            [clojure.tools.logging :as log]
             [edamame.core :as eda]
             [fipp.edn :refer [pprint]])
   (:import (java.io File PushbackReader)))
@@ -22,7 +22,9 @@
   (when *modern-syntax?*
     (let [{:keys [queries mutations]} contents]
       (when (or (seq queries) (seq mutations))
-        (log/warn ":queries and :mutations keys are deprecated." (str "(" path ")"))))))
+        (perr [:red ":queries and :mutations keys are deprecated."]
+              " "
+              [:blue path])))))
 
 (defn read-edn
   "schema 스펙 확장을 지원하는 edn 리더"
@@ -43,7 +45,13 @@
     (assoc m k v)
     m))
 
-(defn normalize-root-objects
+(defn- assoc-in-when
+  [m ks v]
+  (if v
+    (assoc-in m ks v)
+    m))
+
+(defn- demodernize
   "Reserved names for top-level objects in Lacinia are Query, Mutation, Subscription.
   Bring them up to :queries, :mutations and :subscriptions keys. (old notation)"
   [schema]
@@ -52,6 +60,20 @@
       (assoc-when :mutations (get-in schema [:objects :Mutation :fields]))
       (assoc-when :subscriptions (get-in schema [:objects :Subscription :fields]))
       (update :objects dissoc :Query :Mutation :Subscription)))
+
+(defn- modernize
+  "
+  args:
+    schema - plain map of whole schema
+  "
+  [^Subschema {:keys [contents] :as schema}]
+  (let [{:keys [queries mutations subscriptions]} contents
+        new-contents (-> contents
+                         (assoc-in-when [:objects :Query :fields] queries)
+                         (assoc-in-when [:objects :Mutation :fields] mutations)
+                         (assoc-in-when [:objects :Subscription :fields] subscriptions)
+                         (dissoc :queries :mutations :subscriptions))]
+    (assoc schema :contents new-contents)))
 
 (defn source-map
   "TODO: only support for 1-level map"
@@ -70,9 +92,9 @@
     path - path to read the subschema
     opts:
       :transformers - a list of functions to transform the schema before stitching."
+  ^Subschema
   [^File path & {:keys [source-map? transformers]}]
-  (let [contents    (cond-> (read-edn path source-map?)
-                            *modern-syntax?* normalize-root-objects
+  (let [contents    (cond-> (demodernize (read-edn path source-map?))
                             source-map? ((source-map (.getPath path))))
 
         ;; transform
@@ -99,11 +121,12 @@
   [a b]
   (set/intersection (set (keys a)) (set (keys b))))
 
-(def empty-subschema (map->Subschema {:contents {}}))
+;(def empty-subschema (map->Subschema {:contents {}}))
 
 (defn stitch-subschemas
   "Merge two subschemas into one subschema. If there is a conflict, throw an exception."
-  [{a :contents} {b :contents :as subschema-b}]
+  [^Subschema {a :contents}
+   ^Subschema {b :contents :as subschema-b}]
   (let [res (merge-with merge a b)
         _   (when-not (= (merge-with + (update-vals a count) (update-vals b count))
                          (update-vals res count))
@@ -116,6 +139,13 @@
                                  :conflicts conflicts}))))]
     (map->Subschema {:contents res})))
 
+(defn make-superschema
+  ^Subschema [subschemas]
+  (let [superschema (reduce stitch-subschemas subschemas)]
+    ;; apply post transformers
+    (cond-> superschema
+            *modern-syntax?* modernize)))
+
 (defn print-schema
   [^Subschema schema & {:keys [pretty] :as _opts}]
   (if pretty
@@ -127,12 +157,11 @@
   (read-subschema (io/file "test-resources/subschemas/user.edn"))
   (def subschemas (read-subschemas ["test-resources/subschemas"]))
 
-  (let [whole (time (reduce stitch-subschemas subschemas))]
-    (time (print-schema whole :pretty false)))
+  (reduce stitch-subschemas subschemas)
+
+  (let [super (make-superschema subschemas)]
+    (print-schema super :pretty true))
 
   (validate-subschema!)
-
-  (let [schema (read-subschema (io/file "test-resources/subschemas/cart.edn") :source-map? true)]
-    schema)
 
   :rcf)

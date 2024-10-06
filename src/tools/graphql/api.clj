@@ -38,7 +38,7 @@
                                                          :source-map?  source-map?})
         _           (when-not (seq subschemas)
                       (throw (ex-info "No subschemas found" {})))
-        superschema (reduce stitch/stitch-subschemas subschemas)]
+        superschema (stitch/make-superschema subschemas)]
     (if output-path
       (let [output-file (coerce-to-file output-path "superschema.edn")]
         (when (some #(is-path-under-dir? output-path %) input-paths)

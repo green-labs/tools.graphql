@@ -1,0 +1,46 @@
+{:queries {}
+
+ :mutations
+ {:refuseReceivedOrder
+  {:description "판매자 - 판매 거부 (전체): 판매자가 수신한 주문에 대해 판매를 거부한다."
+   :args        {:id {:type        (non-null ID)
+                      :description "주문 ID"}}
+   :type        (non-null :OrderSellerActionPayload)}}
+
+ :input-objects
+ {:UpdateOrderShippingGroupShippingNumberInput
+  {:fields {:shippingNumber      {:type        (non-null String)
+                                  :description "송장 번호"}
+            :shippingCompanyCode {:type        (non-null String)
+                                  :description "택배사 코드"}}}
+  :UpdateOrderShippingGroupShippingNumberWithIdInput
+  {:fields {:id                  {:type        (non-null ID)
+                                  :description "주문배송그룹 ID"}
+            :shippingNumber      {:type        (non-null String)
+                                  :description "송장 번호"}
+            :shippingCompanyCode {:type        (non-null String)
+                                  :description "택배사 코드"}}}}
+
+ :unions
+ {:OrderSellerActionPayload
+  {:members [:OrderSellerActionResult :NotFoundError :InvalidInputError :InvalidOrderStatusError :SellerUnauthorizedError]}
+  :OrderShippingGroupSellerActionPayload
+  {:members [:OrderShippingGroupSellerActionResult :NotFoundError :InvalidInputError :InvalidOrderShippingGroupStatusError :ShippingTrackingError]}
+  :OrderShippingGroupsSellerActionPayload
+  {:members [:OrderShippingGroupsSellerActionResult :NotFoundError :InvalidInputError :InvalidOrderShippingGroupStatusError :ShippingTrackingError]}
+  :OrderProductOptionSellerActionPayload
+  {:members [:OrderProductOptionSellerActionResult :NotFoundError :InvalidInputError :InvalidOrderProductOptionStatusError :ShippingTrackingError]}
+  :OrderProductOptionsSellerActionPayload
+  {:members [:OrderProductOptionsSellerActionResult :NotFoundError :InvalidInputError :InvalidOrderProductOptionStatusError :ShippingTrackingError]}}
+
+ :objects
+ {:Mutation {:fields {:refuseReceivedOrderShippingGroup
+                      {:description "판매자 - 판매 거부 (배송그룹): 판매자가 수신한 주문 중 특정 배송그룹에 대해 판매를 거부한다."
+                       :args        {:id {:type        (non-null ID)
+                                          :description "주문배송그룹 ID"}}
+                       :type        (non-null :OrderShippingGroupSellerActionPayload)}}}
+  :Query    {:fields {}}
+  :OrderSellerActionResult
+  {:fields {:order {:type (non-null :Order)}}}
+  :OrderShippingGroupSellerActionResult
+  {:fields {:orderShippingGroup {:type (non-null :OrderShippingGroup)}}}}} }
