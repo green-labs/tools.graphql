@@ -1,0 +1,7 @@
+{:objects {:Me    {:implements  [:Node]
+                   :description "로그인된 사용자 자신의 정보"
+                   :fields      {:id     {:type (! ID)}
+                                 :userId {:type (! Int)}
+                                 :name   {:type String}}}
+           :Query {:fields {:me {:type        (! :Me)
+                                 :description "로그인된 사용자 자신의 정보를 조회한다"}}}}}

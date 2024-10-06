@@ -9,7 +9,7 @@
   [{:keys [output-file pretty]}]
   {:pre [(some? output-file)]}
   (let [schemas     (vals @path->schema)
-        superschema (reduce stitch/stitch-subschemas schemas)]
+        superschema (stitch/make-superschema schemas)]
     (time
       (spit output-file (with-out-str (stitch/print-schema superschema :pretty pretty))))))
 
