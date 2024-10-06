@@ -18,7 +18,7 @@
 (def ^:dynamic *modern-syntax?* true)
 
 (defn- validate-subschema!
-  [^Subschema {:keys [name path contents]}]
+  [^Subschema {:keys [path contents]}]
   (when *modern-syntax?*
     (let [{:keys [queries mutations]} contents]
       (when (or (seq queries) (seq mutations))
@@ -140,7 +140,7 @@
     (map->Subschema {:contents res})))
 
 (defn make-superschema
-  [subschemas]
+  ^Subschema [subschemas]
   (let [superschema (reduce stitch-subschemas subschemas)]
     ;; apply post transformers
     (cond-> superschema
@@ -157,15 +157,11 @@
   (read-subschema (io/file "test-resources/subschemas/user.edn"))
   (def subschemas (read-subschemas ["test-resources/subschemas"]))
 
-  (let [whole (reduce stitch-subschemas subschemas)]
-    (time (print-schema whole :pretty false)))
+  (reduce stitch-subschemas subschemas)
 
   (let [super (make-superschema subschemas)]
     (print-schema super :pretty true))
 
   (validate-subschema!)
-
-  (let [schema (read-subschema (io/file "test-resources/subschemas/cart.edn") :source-map? true)]
-    schema)
 
   :rcf)
