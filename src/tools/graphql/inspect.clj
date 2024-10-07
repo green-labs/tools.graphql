@@ -153,12 +153,12 @@
                 fields)
               (mapcat (fn [[field-name {:keys [type args]}]]
                         (concat
-                          (when (get-object schema (inner-type type))
-                            (extract-field-args schema type (assoc opts
-                                                              :depth (inc depth)
-                                                              :fields-map (field-name fields-map))))
-                          (when (and args (<= depth max-depth))
-                            (args->query-args args (name field-name))))))))))))
+                         (when (get-object schema (inner-type type))
+                           (extract-field-args schema type (assoc opts
+                                                                  :depth (inc depth)
+                                                                  :fields-map (field-name fields-map))))
+                         (when (and args (<= depth max-depth))
+                           (args->query-args args (name field-name))))))))))))
 
 (defn- query&mutation->query
   [schema query-type query-name {:keys [args type]} {:keys [max-depth fields-map]
@@ -171,7 +171,7 @@
                                                                       :fields-map fields-map})]
     (str query-type " " (name query-name)
          (sdl/->arg (->> (concat query-args field-args)
-                     (into {})))
+                         (into {})))
          " {\n"
          (name query-name)
          (when (seq args)
@@ -213,8 +213,8 @@
    & {:keys [max-depth]
       :or   {max-depth 3}
       :as   opts}]
-  (prn opts)
-  (when-let [{:keys [args type]}  (get-in schema [:queries query-name])]
+  (when-let [{:keys [args type]} (or (get-in schema [:queries query-name])
+                                     (get-in schema [:objects :Query :fields query-name]))]
     (let [query-args (args->query-args args)
           field-def  (type->field-def schema type)
           field-args (mapcat #(extract-field-args schema % {:max-depth max-depth
@@ -224,7 +224,7 @@
                              :max-depth max-depth} opts)]
       (str "query " (name query-name)
            (sdl/->arg (->> (concat query-args field-args)
-                       (into {})))
+                           (into {})))
            " {\n"
            (name query-name)
            (when (seq args)
