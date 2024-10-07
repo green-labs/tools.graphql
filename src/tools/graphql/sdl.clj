@@ -66,9 +66,10 @@
   ([[field-name {:keys [description type args default-value deprecated]}] indent]
    (str (->doc description indent)
         indent (name field-name)
-        (when args (->> (->arg args)
-                        (s/split-lines)
-                        (s/join (str "\n" indent))))
+        (when (seq args)
+          (->> (->arg args)
+               (s/split-lines)
+               (s/join (str "\n" indent))))
         ": "
         (->type type)
         (when default-value
