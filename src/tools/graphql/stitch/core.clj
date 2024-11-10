@@ -17,14 +17,13 @@
 
 (def ^:dynamic *modern-syntax?* true)
 
-(defn- validate-subschema!
-  [^Subschema {:keys [path contents]}]
-  (when *modern-syntax?*
-    (let [{:keys [queries mutations]} contents]
-      (when (or (seq queries) (seq mutations))
-        (perr [:red ":queries and :mutations keys are deprecated."]
-              " "
-              [:blue path])))))
+(defn- validate-contents!
+  [path contents]
+  (let [{:keys [queries mutations]} contents]
+    (when (or (seq queries) (seq mutations))
+      (perr [:red ":queries and :mutations keys are deprecated."]
+            " "
+            [:blue path]))))
 
 (defn read-edn
   "schema 스펙 확장을 지원하는 edn 리더"
@@ -35,8 +34,10 @@
                        {:readers {'var #(tagged-literal 'var %)}})
 
      (with-open [r (io/reader in)]
-       (edn/read {:default tagged-literal}
-                 (PushbackReader. r))))))
+       (let [contents (edn/read {:default tagged-literal}
+                            (PushbackReader. r))]
+         (validate-contents! in contents)
+         contents)))))
 
 (defn- assoc-when
   "When the value is not nil, assoc the key-value pair."
@@ -94,21 +95,20 @@
       :transformers - a list of functions to transform the schema before stitching."
   ^Subschema
   [^File path & {:keys [source-map? transformers]}]
-  (let [contents    (cond-> (demodernize (read-edn path source-map?))
+  (let [contents    (cond-> (read-edn path source-map?)
                             source-map? ((source-map (.getPath path))))
 
         ;; transform
-        transformer (apply comp transformers)
+        transformer (apply comp (conj transformers demodernize))
         subschema   (map->Subschema {:path     path
                                      :name     (.getName path)
-                                     :contents (transformer contents)})
-
-        ;; validate
-        _           (validate-subschema! subschema)]
+                                     :contents (transformer contents)})]
     subschema))
 
 (defn read-subschemas
-  "Read all subschemas in the given directory."
+  "Read all subschemas in the given directory.
+
+  TODO: handle exceptions while reading subschemas"
   [dirs & {:as opts}]
   (let [find-schemas (fn [dir]
                        (->> (file-seq (io/file dir))
@@ -161,7 +161,5 @@
 
   (let [super (make-superschema subschemas)]
     (print-schema super :pretty true))
-
-  (validate-subschema!)
 
   :rcf)
