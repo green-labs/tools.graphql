@@ -27,10 +27,13 @@
                  !type-name)))
 
 (defn unreachable-types [schema]
-  (let [types        (sort (m/search schema
-                                     {(m/or :objects :enums :unions) {?type {:loc ?loc
-                                                                             :linters ?opts}}}
-                                     [?type ?loc ?opts]))
+  (let [types        (->> (m/search schema
+                                    {(m/or :objects :enums :unions) {?type {:loc ?loc
+                                                                            :linters ?opts}}}
+                                    [?type ?loc ?opts])
+                          ;; `Query` and `Mutation` are always reachable
+                          (remove #(-> % first #{:Query :Mutation}))
+                          (sort))
         unreachable? (fn [[t _ opts]]
                        (and (not (:ignore opts))
                             (nil? (m/find {:schema schema
@@ -46,12 +49,12 @@
                                           ?an
 
                                           ;; [field type] queries and mutations
-                                          {:schema {(m/or :queries :mutations) {?qm {:type (m/$ ?t)}}}
+                                          {:schema {:objects {(m/or :Query :Mutation) {:fields {?qm {:type (m/$ ?t)}}}}}
                                            :type   ?t}
                                           ?qm
 
                                           ;; [argument type] queries and mutations
-                                          {:schema {(m/or :queries :mutations) {?qm {:args {?input {:type (m/$ ?t)}}}}}
+                                          {:schema {:objects {(m/or :Query :Mutation) {:fields {?qm {:args {?input {:type (m/$ ?t)}}}}}}}
                                            :type   ?t}
                                           ?qm
 
@@ -68,7 +71,7 @@
         unreachable? (fn [[t]]
                        (nil? (m/find {:schema schema
                                       :type   t}
-                                     {:schema {(m/or :queries :mutations) {?query {:args {?input {:type (m/$ ?t)}}}}}
+                                     {:schema {:objects {(m/or :Query :Mutation) {:fields {?query {:args {?input {:type (m/$ ?t)}}}}}}}
                                       :type   ?t}
                                      ?query
                                      {:schema {:input-objects {?type {:fields {?field {:type (m/$ ?t)}}}}}
@@ -92,7 +95,7 @@
 
 (defn no-root-resolver [schema]
   (m/search schema
-            {(m/or :queries :mutations) {?qm {:resolve (m/and nil ?resolver)}}}
+            {:objects {(m/or :Query :Mutation) {:fields {?qm {:resolve (m/and nil ?resolver)}}}}}
             ?qm))
 
 (defn- connection-query? [schema]
