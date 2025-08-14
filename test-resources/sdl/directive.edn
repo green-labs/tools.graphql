@@ -11,7 +11,10 @@
   :tag {:description "Add a tag to an element"
         :repeatable true
         :locations #{:field-definition :object}
-        :args {:name {:type (non-null String)}}}}
+        :args {:name {:type (non-null String)}}}
+  
+  :skip {:description "Skip this field or fragment"
+         :locations #{:field :fragment-spread :inline-fragment}}}
 
  :enums
  {:Role {:values [{:enum-value :ADMIN}

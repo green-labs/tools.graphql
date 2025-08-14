@@ -19,6 +19,11 @@ directive @tag(
   name: String!
 ) repeatable on FIELD_DEFINITION | OBJECT
 
+"""
+Skip this field or fragment
+"""
+directive @skip on INLINE_FRAGMENT | FIELD | FRAGMENT_SPREAD
+
 enum Role {
   ADMIN
   USER
