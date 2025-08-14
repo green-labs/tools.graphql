@@ -214,10 +214,11 @@
 
 (defmethod ->sdl :directive-defs
   [[_ m]]
-  (map (fn [[k {:keys [description args locations]}]]
+  (map (fn [[k {:keys [description args locations repeatable]}]]
          (str (->doc description)
               "directive @" (name k)
               (->arg args)
+              (when repeatable " repeatable")
               (when (seq locations)
                 (str " on " (->locations locations)))
               "\n"))
