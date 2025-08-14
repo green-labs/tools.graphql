@@ -1,27 +1,33 @@
-{:directive-defs
- {:oneOf {:locations #{:input-object}}}
+type Pet {
+  name: String!
+  numberOfLives: Int
+  wagsTail: Boolean
+  bodyLengthInMm: Int
+}
 
- :objects
- {:Pet {:fields {:name           {:type (non-null String)}
-                 :numberOfLives  {:type Int}
-                 :wagsTail       {:type Boolean}
-                 :bodyLengthInMm {:type Int}}}}
+input PetInput @oneOf {
+  cat: CatInput
+  dog: DogInput
+  fist: FishInput
+}
 
- :input-objects
- {:PetInput  {:directives [{:directive-type :oneOf}]
-              :fields     {:cat  {:type :CatInput}
-                           :dog  {:type :DogInput}
-                           :fist {:type :FishInput}}}
+input CatInput {
+  name: String!
+  numberOfLives: Int
+}
 
-  :CatInput  {:fields {:name          {:type (non-null String)}
-                       :numberOfLives {:type Int}}}
-  :DogInput  {:fields {:name     {:type (non-null String)}
-                       :wagsTail {:type Boolean}}}
-  :FishInput {:fields {:name           {:type (non-null String)}
-                       :bodyLengthInMm {:type Int}}}}
+input DogInput {
+  name: String!
+  wagsTail: Boolean
+}
 
- :mutations
- {:addPet
-  {:type    :Pet
-   :args    {:pet {:type :PetInput}}
-   :resolve :mutations/add-pet}}}
+input FishInput {
+  name: String!
+  bodyLengthInMm: Int
+}
+
+type Mutation {
+  addPet(
+    pet: PetInput
+  ): Pet
+}
