@@ -1,6 +1,16 @@
-{:mutations {:setOccupation {:args        {:id {:type        (non-null ID)
+{:directive-defs
+ {:auth {:locations #{:field-definition}
+         :args {:role {:type :Role}}}}
+
+ :enums
+ {:Role {:values [{:enum-value :ADMIN}
+                  {:enum-value :USER}
+                  {:enum-value :GUEST}]}}
+
+ :mutations {:setOccupation {:args        {:id {:type        (non-null ID)
                                                 :description "직업군의 ID"}}
                              :type        (non-null :SetOccupationPayload)
-                             :directives  (list {:directive-type :auth})
+                             :directives  (list {:directive-type :auth
+                                                 :directive-args {:role :ADMIN}})
                              :deprecated  "deprecated"
                              :description "로그인된 사용자의 직업군을 설정"}}}

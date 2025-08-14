@@ -26,7 +26,8 @@
     (test-conversion "mutation")
     (test-conversion "union")
     (test-conversion "input-object")
-    (test-conversion "scalar")))
+    (test-conversion "scalar")
+    (test-conversion "input-object-one-of"))) 
 
 (comment
   (run-tests))
