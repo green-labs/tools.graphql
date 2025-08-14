@@ -2,7 +2,7 @@
 Authentication directive
 """
 directive @auth(
-  role: Role
+  roles: [Role]
 ) on FIELD_DEFINITION
 
 """
@@ -31,12 +31,12 @@ enum Role {
 
 type User @tag(name: "model") {
   name: String @tag(name: "sensitive") @tag(name: "pii")
-  role: Role @auth(role: ADMIN)
+  role: Role @auth(roles: [ADMIN, USER])
   oldField: String @deprecated(reason: "Use name instead")
 }
 
 type Mutation {
   updateUser(
     id: ID!
-  ): User @auth(role: ADMIN)
+  ): User @auth(roles: [ADMIN])
 }
