@@ -11,7 +11,7 @@
  {:PetInput  {:directives [{:directive-type :oneOf}]
               :fields     {:cat  {:type :CatInput}
                            :dog  {:type :DogInput}
-                           :fist {:type :FishInput}}}
+                           :fish {:type :FishInput}}}
 
   :CatInput  {:fields {:name          {:type (non-null String)}
                        :numberOfLives {:type Int}}}

@@ -8,7 +8,7 @@ type Pet {
 input PetInput @oneOf {
   cat: CatInput
   dog: DogInput
-  fist: FishInput
+  fish: FishInput
 }
 
 input CatInput {
