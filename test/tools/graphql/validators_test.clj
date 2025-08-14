@@ -23,15 +23,15 @@
                                                :createdAt {:type 'String}
                                                :updatedAt {:type 'String}
                                                :deletedAt {:type :Date}}}
-                              :Date  {:fields {:year  {:type 'Int}
-                                               :month {:type 'Int}
-                                               :day   {:type 'Int}}}
-                              :Dummy {:fields {:id {:type 'String}}}}
-                  :queries   {:user  {:type :User}
-                              :users {:type '(non-null (list (non-null :User)))}}
-                  :mutations {:createUser {:type :User}
-                              :updateUser {:type :User}
-                              :deleteUser {:type :User}}}]
+                              :Date     {:fields {:year  {:type 'Int}
+                                                :month {:type 'Int}
+                                                :day   {:type 'Int}}}
+                              :Dummy    {:fields {:id {:type 'String}}}
+                              :Query    {:fields {:user  {:type :User}
+                                                  :users {:type '(non-null (list (non-null :User)))}}}
+                              :Mutation {:fields {:createUser {:type :User}
+                                                  :updateUser {:type :User}
+                                                  :deleteUser {:type :User}}}}}]
       (is (= [[:Dummy nil nil]] (v/unreachable-types schema)))))
 
   (testing "object referenced in union"
@@ -42,8 +42,8 @@
   (testing "ignoring option"
     (let [schema {:objects {:User  {:fields {:id {:type 'String}}}
                             :Dummy {:linters {:ignore true}
-                                    :fields  {:id {:type 'String}}}}
-                  :queries {:user {:type :User}}}]
+                                    :fields  {:id {:type 'String}}}
+                            :Query {:fields {:user {:type :User}}}}}]
       (is (= [] (v/unreachable-types schema))))))
 
 (deftest no-unreachable-input-types
@@ -52,10 +52,10 @@
                                                        :email    {:type 'String}
                                                        :password {:type 'String}}}
                                   :Dummy     {:fields {:id {:type 'String}}}}
-                  :queries       {:user  {:type :User}
-                                  :users {:type '(non-null (list (non-null :User)))}}
-                  :mutations     {:updateUser {:type :User
-                                               :args {:input {:type :UserInput}}}}}]
+                  :objects       {:Query    {:fields {:user  {:type :User}
+                                                          :users {:type '(non-null (list (non-null :User)))}}}
+                                  :Mutation {:fields {:updateUser {:type :User
+                                                                   :args {:input {:type :UserInput}}}}}}}]
       (is (= [[:Dummy nil]] (v/unreachable-input-types schema)))))
 
   (testing "input-object referenced in another input-object"
@@ -102,17 +102,17 @@
 
 (deftest no-root-resolver
   (testing "query or mutation without resolver"
-    (let [schema {:queries   {:user {:type :User}}
-                  :mutations {:createUser {:type :User}
-                              :updateUser {:type :User}
-                              :deleteUser {:type :User}}}]
+    (let [schema {:objects {:Query    {:fields {:user {:type :User}}}
+                            :Mutation {:fields {:createUser {:type :User}
+                                                :updateUser {:type :User}
+                                                :deleteUser {:type :User}}}}}]
       (is (= [:user :createUser :updateUser :deleteUser]
              (v/no-root-resolver schema)))))
 
   (testing "resolver is 'maybe' or nil assigned"
-    (let [schema {:queries {:q {:resolve clojure.core/identity}
-                            :r {:resolve nil}
-                            :s {}}}]
+    (let [schema {:objects {:Query {:fields {:q {:resolve clojure.core/identity}
+                                              :r {:resolve nil}
+                                              :s {}}}}}]
       (is (= [:r :s] (v/no-root-resolver schema))))))
 
 (deftest pagination-direction-test
