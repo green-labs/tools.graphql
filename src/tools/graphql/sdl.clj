@@ -50,20 +50,30 @@
 (declare ->arg)
 
 (defn- ->directive [directive args]
-  (let [args' (->> args
-                   (map (fn [[k v]]
-                          (let [k' (name k)
-                                v' (if (string? v) (str \" v \") v)]
-                            (str k' ": " v'))))
-                   (s/join ", "))]
-    (str "@" directive (when args (str "(" args' ")")))))
+  (let [args' (some->> args
+                       (map (fn [[k v]]
+                              (let [k' (name k)
+                                    v' (->value v)]
+                                (str k' ": " v'))))
+                       (s/join ", "))]
+    (str "@" directive (when args' (str "(" args' ")")))))
 
 (defn- ->deprecated [deprecated]
   (->directive "deprecated" (when deprecated {:reason deprecated})))
 
+(defn- ->directives [directives]
+  (when (seq directives)
+    (->> directives
+         (map (fn [{:keys [directive-type directive-args]}]
+                (when directive-type
+                  (->directive (name directive-type) directive-args))))
+         (remove nil?)
+         (s/join " ")
+         (str " "))))
+
 (defn ->field
   ([m] (->field m ""))
-  ([[field-name {:keys [description type args default-value deprecated]}] indent]
+  ([[field-name {:keys [description type args default-value deprecated directives]}] indent]
    (str (->doc description indent)
         indent (name field-name)
         (when (seq args)
@@ -74,7 +84,8 @@
         (->type type)
         (when default-value
           (str " = " (->value default-value)))
-        (when deprecated (str " " (->deprecated deprecated))))))
+        (when deprecated (str " " (->deprecated deprecated)))
+        (->directives directives))))
 
 (defn ->arg
   ([m] (->arg m ""))
@@ -120,7 +131,7 @@
 
 (defn- object&input&interface->sdl
   [type m]
-  (map (fn [[k {:keys [description implements fields]}]]
+  (map (fn [[k {:keys [description implements fields directives]}]]
          (str (->doc description)
               type
               " " (name k)
@@ -129,6 +140,7 @@
                      (->> implements
                           (map name)
                           (s/join " & "))))
+              (->directives directives)
               " {\n"
               (->> fields
                    vec
@@ -155,14 +167,15 @@
        type
        " {\n"
        (->> m
-            (map (fn [[k {:keys [deprecated description args type]}]]
+            (map (fn [[k {:keys [deprecated description args type directives]}]]
                    (str (->doc description "  ")
                         "  "
                         (name k)
                         (->arg args "  ")
                         ": "
                         (->type type)
-                        (when deprecated (str " " (->deprecated deprecated))))))
+                        (when deprecated (str " " (->deprecated deprecated)))
+                        (->directives directives))))
             (s/join "\n"))
        "\n}\n"))
 
