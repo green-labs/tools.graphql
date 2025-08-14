@@ -1,3 +1,5 @@
+directive @oneOf on INPUT_OBJECT
+
 type Pet {
   name: String!
   numberOfLives: Int
