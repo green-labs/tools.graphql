@@ -2,7 +2,7 @@
   (:require [clojure.string :as s]))
 
 (def ^:private convert-keys
-  #{:enums :interfaces :objects :queries :mutations :unions :input-objects :scalars})
+  #{:enums :interfaces :objects :queries :mutations :unions :input-objects :scalars :directive-defs})
 
 (defmulti ->sdl
   (fn [[k _]]
@@ -203,6 +203,25 @@
   (map (fn [[k {:keys [description]}]]
          (str (->doc description)
               "scalar " (name k) "\n"))
+       (vec m)))
+
+(defn- ->locations [locations]
+  (->> locations
+       (map name)
+       (map #(s/replace % "-" "_"))
+       (map s/upper-case)
+       (s/join " | ")))
+
+(defmethod ->sdl :directive-defs
+  [[_ m]]
+  (map (fn [[k {:keys [description args locations repeatable]}]]
+         (str (->doc description)
+              "directive @" (name k)
+              (->arg args)
+              (when repeatable " repeatable")
+              (when (seq locations)
+                (str " on " (->locations locations)))
+              "\n"))
        (vec m)))
 
 (defmethod ->sdl :default

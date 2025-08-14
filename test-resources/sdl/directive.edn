@@ -1,0 +1,41 @@
+{:directive-defs
+ {:auth {:description "Authentication directive"
+         :locations #{:field-definition}
+         :args {:roles {:type (list :Role)}}}
+  
+  :deprecated {:description "Marks an element as deprecated"
+               :locations #{:field-definition :enum-value}
+               :args {:reason {:type String
+                               :default-value "No longer supported"}}}
+  
+  :tag {:description "Add a tag to an element"
+        :repeatable true
+        :locations #{:field-definition :object}
+        :args {:name {:type (non-null String)}}}
+  
+  :skip {:description "Skip this field or fragment"
+         :locations #{:field :fragment-spread :inline-fragment}}}
+
+ :enums
+ {:Role {:values [{:enum-value :ADMIN}
+                  {:enum-value :USER}]}}
+
+ :objects
+ {:User {:directives [{:directive-type :tag
+                       :directive-args {:name "model"}}]
+         :fields {:name {:type String
+                         :directives [{:directive-type :tag
+                                       :directive-args {:name "sensitive"}}
+                                      {:directive-type :tag
+                                       :directive-args {:name "pii"}}]}
+                  :role {:type :Role
+                         :directives [{:directive-type :auth
+                                       :directive-args {:roles [:ADMIN :USER]}}]}
+                  :oldField {:type String
+                             :deprecated "Use name instead"}}}}
+
+ :mutations
+ {:updateUser {:type :User
+               :args {:id {:type (non-null ID)}}
+               :directives [{:directive-type :auth
+                             :directive-args {:roles [:ADMIN]}}]}}}
