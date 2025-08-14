@@ -1,0 +1,37 @@
+"""
+Authentication directive
+"""
+directive @auth(
+  role: Role
+) on FIELD_DEFINITION
+
+"""
+Marks an element as deprecated
+"""
+directive @deprecated(
+  reason: String = "No longer supported"
+) on ENUM_VALUE | FIELD_DEFINITION
+
+"""
+Add a tag to an element
+"""
+directive @tag(
+  name: String!
+) repeatable on FIELD_DEFINITION | OBJECT
+
+enum Role {
+  ADMIN
+  USER
+}
+
+type User @tag(name: "model") {
+  name: String @tag(name: "sensitive") @tag(name: "pii")
+  role: Role @auth(role: ADMIN)
+  oldField: String @deprecated(reason: "Use name instead")
+}
+
+type Mutation {
+  updateUser(
+    id: ID!
+  ): User @auth(role: ADMIN)
+}

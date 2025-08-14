@@ -1,5 +1,0 @@
-{:directive-defs
- {:deprecated {:description "Marks an element as deprecated"
-               :locations #{:field-definition :enum-value}
-               :args {:reason {:type String
-                               :default-value "No longer supported"}}}}}

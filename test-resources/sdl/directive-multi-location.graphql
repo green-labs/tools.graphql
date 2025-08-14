@@ -1,6 +1,0 @@
-"""
-Marks an element as deprecated
-"""
-directive @deprecated(
-  reason: String = "No longer supported"
-) on ENUM_VALUE | FIELD_DEFINITION

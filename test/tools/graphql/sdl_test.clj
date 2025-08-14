@@ -28,7 +28,7 @@
     (test-conversion "input-object")
     (test-conversion "scalar")
     (test-conversion "input-object-one-of")
-    (test-conversion "directive-multi-location"))) 
+    (test-conversion "directives"))) 
 
 (comment
   (run-tests))
