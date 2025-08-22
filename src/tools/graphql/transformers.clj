@@ -17,6 +17,63 @@
                      :else v))
                  type))
 
+(defn- transform-simplified-directives
+  "Transform simplified directive syntax to lacinia format
+  
+  Examples:
+  {:auth {:roles [:ADMIN]}} -> [{:directive-type :auth :directive-args {:roles [:ADMIN]}}]
+  {:tag [{:name \"sensitive\"} {:name \"pii\"}]} -> [{:directive-type :tag :directive-args {:name \"sensitive\"}}
+                                                      {:directive-type :tag :directive-args {:name \"pii\"}}]
+  "
+  [directives directive-defs]
+  (when (map? directives)
+    (->> directives
+         (mapcat (fn [[directive-type directive-value]]
+                   (let [directive-def (get directive-defs directive-type)]
+                     (cond
+                       ;; List of maps for repeatable directive
+                       (and (:repeatable directive-def) (sequential? directive-value))
+                       (map (fn [value]
+                              {:directive-type directive-type
+                               :directive-args value})
+                            directive-value)
+                       
+                       ;; List for non-repeatable directive (error)
+                       (and (not (:repeatable directive-def)) (sequential? directive-value))
+                       (throw (ex-info (format "Directive %s is not repeatable but received a list of values: %s" 
+                                               directive-type directive-value)
+                                       {:directive-type directive-type
+                                        :repeatable false
+                                        :values directive-value}))
+                       
+                       ;; Map value (args)
+                       (map? directive-value)
+                       [{:directive-type directive-type
+                         :directive-args directive-value}]
+                       
+                       ;; Invalid value type
+                       :else
+                       (throw (ex-info (format "Invalid directive value for %s: %s. Expected map or list of maps for repeatable directives." 
+                                               directive-type directive-value)
+                                       {:directive-type directive-type
+                                        :value directive-value}))))))
+         vec)))
+
+(defn transform-directives
+  "Transform simplified directive syntax throughout the schema"
+  [schema]
+  (let [directive-defs (:directive-defs schema)]
+    (walk/postwalk
+     (fn [v]
+       (cond
+         ;; Handle :directives key with map value (simplified syntax)
+         (and (map-entry? v) (= :directives (first v)) (map? (second v)))
+         [:directives (transform-simplified-directives (second v) directive-defs)]
+         
+         ;; Leave existing lacinia format unchanged
+         :else v))
+     schema)))
+
 (defn transform-type-sugar
   "expand lacinia edn schema to support ! and []
 
