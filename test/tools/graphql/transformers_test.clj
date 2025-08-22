@@ -137,7 +137,36 @@
                   :objects {:User {:directives {:auth [{:roles "role1"} {:roles "role2"}]}}}}]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
                            #"Directive :auth is not repeatable"
-                           (transform-directives schema))))))
+                           (transform-directives schema)))))
+  
+  (testing "args가 없는 directive 처리"
+    (let [schema {:directive-defs {:skip {:locations #{:field}}}
+                  :objects {:User {:fields {:name {:directives {:skip true}}}}}}
+          result (transform-directives schema)
+          expected-directives (get-in result [:objects :User :fields :name :directives])]
+      (is (= expected-directives [{:directive-type :skip}]))))
+  
+  (testing "빈 맵으로 args 없음 표현"
+    (let [schema {:directive-defs {:skip {:locations #{:field}}}
+                  :objects {:User {:fields {:name {:directives {:skip {}}}}}}}
+          result (transform-directives schema)
+          expected-directives (get-in result [:objects :User :fields :name :directives])]
+      (is (= expected-directives [{:directive-type :skip}]))))
+  
+  (testing "repeatable directive에서 일부만 args 있는 경우"
+    (let [schema {:directive-defs {:custom {:repeatable true
+                                            :args {:name {:type 'String}
+                                                   :category {:type 'String}}}}
+                  :objects {:User {:directives {:custom [{:name "test"}
+                                                         {:category "prod"}
+                                                         {}]}}}}
+          result (transform-directives schema)
+          expected-directives (get-in result [:objects :User :directives])]
+      (is (= expected-directives [{:directive-type :custom
+                                   :directive-args {:name "test"}}
+                                  {:directive-type :custom
+                                   :directive-args {:category "prod"}}
+                                  {:directive-type :custom}])))))
 
 (comment
   (run-tests))

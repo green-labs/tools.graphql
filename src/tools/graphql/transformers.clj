@@ -21,9 +21,11 @@
   "Transform simplified directive syntax to lacinia format
   
   Examples:
+  {:skip true} -> [{:directive-type :skip}]  ; no args
+  {:skip {}} -> [{:directive-type :skip}]  ; empty args
   {:auth {:roles [:ADMIN]}} -> [{:directive-type :auth :directive-args {:roles [:ADMIN]}}]
-  {:tag [{:name \"sensitive\"} {:name \"pii\"}]} -> [{:directive-type :tag :directive-args {:name \"sensitive\"}}
-                                                      {:directive-type :tag :directive-args {:name \"pii\"}}]
+  {:tag [{:name \"sensitive\"} {}]} -> [{:directive-type :tag :directive-args {:name \"sensitive\"}}
+                                         {:directive-type :tag}]  ; second has no args
   "
   [directives directive-defs]
   (when (map? directives)
@@ -31,11 +33,33 @@
          (mapcat (fn [[directive-type directive-value]]
                    (let [directive-def (get directive-defs directive-type)]
                      (cond
-                       ;; List of maps for repeatable directive
+                       ;; Boolean true for directives (no args)
+                       (true? directive-value)
+                       [{:directive-type directive-type}]
+                       
+                       ;; List for repeatable directive
                        (and (:repeatable directive-def) (sequential? directive-value))
                        (map (fn [value]
-                              {:directive-type directive-type
-                               :directive-args value})
+                              (cond
+                                ;; true means no args
+                                (true? value) 
+                                {:directive-type directive-type}
+                                
+                                ;; empty map means no args
+                                (and (map? value) (empty? value)) 
+                                {:directive-type directive-type}
+                                
+                                ;; map with args
+                                (map? value) 
+                                {:directive-type directive-type
+                                 :directive-args value}
+                                
+                                ;; invalid
+                                :else 
+                                (throw (ex-info (format "Invalid value in repeatable directive %s: %s" 
+                                                        directive-type value)
+                                                {:directive-type directive-type
+                                                 :value value}))))
                             directive-value)
                        
                        ;; List for non-repeatable directive (error)
@@ -46,14 +70,16 @@
                                         :repeatable false
                                         :values directive-value}))
                        
-                       ;; Map value (args)
+                       ;; Map value (args) - can be empty
                        (map? directive-value)
-                       [{:directive-type directive-type
-                         :directive-args directive-value}]
+                       [(if (empty? directive-value)
+                          {:directive-type directive-type}
+                          {:directive-type directive-type
+                           :directive-args directive-value})]
                        
                        ;; Invalid value type
                        :else
-                       (throw (ex-info (format "Invalid directive value for %s: %s. Expected map or list of maps for repeatable directives." 
+                       (throw (ex-info (format "Invalid directive value for %s: %s. Expected true, map, or list of maps for repeatable directives." 
                                                directive-type directive-value)
                                        {:directive-type directive-type
                                         :value directive-value}))))))

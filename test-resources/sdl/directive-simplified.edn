@@ -21,9 +21,13 @@
                   {:enum-value :USER}]}}
 
  :objects
- {:User {:directives {:tag {:name "model"}}  ; explicit map
+ {:User {:directives {:tag {:name "model"}}  ; single directive with args
          :fields {:name {:type String
-                         :directives {:tag [{:name "sensitive"} {:name "pii"}]}}  ; list of maps for repeatable
+                         :directives {:tag [{:name "sensitive"} 
+                                           {:name "pii"}
+                                           {}]}}  ; repeatable: with args, with args, no args
+                  :email {:type String
+                          :directives {:skip true}}  ; no args using true
                   :role {:type :Role
                          :directives {:auth {:roles [:ADMIN :USER]}}}  ; complex args
                   :oldField {:type String
