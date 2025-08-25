@@ -1,6 +1,6 @@
 (ns tools.graphql.transformers-test
   (:require [clojure.test :refer [deftest is testing run-tests]]
-            [tools.graphql.transformers :refer [relay-pagination]]))
+            [tools.graphql.transformers :refer [relay-pagination transform-directives]]))
 
 (deftest relay-pagination-test
   (testing "lacinia schema에서 정의한 Node implements 하나만 된 objects들에게 Graphql relay spec에 맞는 edges, connections를 추가해줍니다"
@@ -98,6 +98,75 @@
                                                                                       :count    {:type        '(non-null Int)
                                                                                                  :description "Number of edges"}}}})]
       (is (= result expected-result)))))
+
+(deftest transform-directives-test
+  (testing "간소화된 directive 문법을 lacinia 형식으로 변환"
+    (let [schema {:directive-defs 
+                  {:tag {:repeatable true
+                         :args {:name {:type '(non-null String)}}}
+                   :auth {:args {:roles {:type '(list :Role)}}}}
+                  :objects 
+                  {:User {:directives {:tag {:name "model"}}
+                          :fields {:name {:directives {:tag [{:name "sensitive"} {:name "pii"}]}}
+                                   :role {:directives {:auth {:roles [:ADMIN]}}}}}}}
+          result (transform-directives schema)
+          expected {:directive-defs 
+                    {:tag {:repeatable true
+                           :args {:name {:type '(non-null String)}}}
+                     :auth {:args {:roles {:type '(list :Role)}}}}
+                    :objects
+                    {:User {:directives [{:directive-type :tag
+                                          :directive-args {:name "model"}}]
+                            :fields {:name {:directives [{:directive-type :tag
+                                                          :directive-args {:name "sensitive"}}
+                                                         {:directive-type :tag
+                                                          :directive-args {:name "pii"}}]}
+                                     :role {:directives [{:directive-type :auth
+                                                          :directive-args {:roles [:ADMIN]}}]}}}}}]
+      (is (= result expected))))
+  
+  (testing "기존 lacinia 형식은 그대로 유지"
+    (let [schema {:directive-defs {:tag {:repeatable true}}
+                  :objects {:User {:directives [{:directive-type :tag
+                                                 :directive-args {:name "model"}}]}}}
+          result (transform-directives schema)]
+      (is (= result schema))))
+  
+  (testing "repeatable이 아닌 directive에서 리스트 사용시 오류 발생"
+    (let [schema {:directive-defs {:auth {:args {:roles {:type '(list :Role)}}}}
+                  :objects {:User {:directives {:auth [{:roles "role1"} {:roles "role2"}]}}}}]
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                           #"Directive :auth is not repeatable"
+                           (transform-directives schema)))))
+  
+  (testing "args가 없는 directive 처리"
+    (let [schema {:directive-defs {:skip {:locations #{:field}}}
+                  :objects {:User {:fields {:name {:directives {:skip true}}}}}}
+          result (transform-directives schema)
+          expected-directives (get-in result [:objects :User :fields :name :directives])]
+      (is (= expected-directives [{:directive-type :skip}]))))
+  
+  (testing "빈 맵으로 args 없음 표현"
+    (let [schema {:directive-defs {:skip {:locations #{:field}}}
+                  :objects {:User {:fields {:name {:directives {:skip {}}}}}}}
+          result (transform-directives schema)
+          expected-directives (get-in result [:objects :User :fields :name :directives])]
+      (is (= expected-directives [{:directive-type :skip}]))))
+  
+  (testing "repeatable directive에서 일부만 args 있는 경우"
+    (let [schema {:directive-defs {:custom {:repeatable true
+                                            :args {:name {:type 'String}
+                                                   :category {:type 'String}}}}
+                  :objects {:User {:directives {:custom [{:name "test"}
+                                                         {:category "prod"}
+                                                         {}]}}}}
+          result (transform-directives schema)
+          expected-directives (get-in result [:objects :User :directives])]
+      (is (= expected-directives [{:directive-type :custom
+                                   :directive-args {:name "test"}}
+                                  {:directive-type :custom
+                                   :directive-args {:category "prod"}}
+                                  {:directive-type :custom}])))))
 
 (comment
   (run-tests))
