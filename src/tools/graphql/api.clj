@@ -1,5 +1,5 @@
 (ns tools.graphql.api
-  (:require [clj-commons.ansi :refer [pcompose]]
+  (:require [clj-commons.ansi :refer [pout]]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [tools.graphql.sdl :as sdl]
@@ -111,14 +111,14 @@
                     (when loc
                       [:blue " " (:path loc) ":" (:row loc) ":" (:col loc)]))]
     (doseq [[t loc] (validators/unreachable-types schema)]
-      (pcompose [:red "Unreachable type"] " " (name t) (print-loc loc)))
+      (pout [:red "Unreachable type"] " " (name t) (print-loc loc)))
     (doseq [[f loc] (validators/unreachable-input-types schema)]
-      (pcompose [:red "Unreachable input"] " " (name f) (print-loc loc)))
+      (pout [:red "Unreachable input"] " " (name f) (print-loc loc)))
     (doseq [[i loc] (validators/unreachable-interfaces schema)]
-      (pcompose [:red "Unreachable interface"] " " (name i) (print-loc loc)))
+      (pout [:red "Unreachable interface"] " " (name i) (print-loc loc)))
     (doseq [[i _loc field] (validators/interface-with-resolver schema)]
-      (pcompose [:red "Interface should not have resolvers"] " " (name i) "." (name field)))
+      (pout [:red "Interface should not have resolvers"] " " (name i) "." (name field)))
     (doseq [[t loc omitted] (validators/omitted-interfaces schema)]
-      (pcompose [:red "Omitted transitive interfaces"] " " (name t) " " [:yellow (set omitted)] (print-loc loc)))
+      (pout [:red "Omitted transitive interfaces"] " " (name t) " " [:yellow (set omitted)] (print-loc loc)))
     (doseq [m (validators/relay-arguments schema)]
-      (pcompose [:red "Invalid pagination arguments"] " " (name (:query m)) [:blue " " (:hint m)]))))
+      (pout [:red "Invalid pagination arguments"] " " (name (:query m)) [:blue " " (:hint m)]))))
